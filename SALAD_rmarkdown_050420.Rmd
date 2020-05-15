@@ -1,0 +1,902 @@
+---
+title: "SALAD Analyses in R"
+author: "Lara Wieland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+fig_caption: yes
+---
+
+### Introduction
+
+This script reproduces Zsuzsi's **analyses on the SALAD dataset** (descriptive and rmANOVA):
+1. Mixed design with between-factor two groups (AD/HC)
+2. Within-factor **cond**: 2 Levels (Stress vs. Control Condition)
+3. Within-factor Rev_Learning **volat**: pre, rev, post 
+
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(fig.width=15, fig.height=8, fig.path='Figs/')
+```
+
+
+
+### Load packages
+
+```{r, include=FALSE}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(ggplot2)) install.packages("readxl")
+if (!require(tidyverse)) install.packages("tidyverse")
+if (!require(psych)) install.packages("psych")
+if (!require(reshape2)) install.packages("reshape2")
+if (!require(car)) install.packages("car")
+if (!require(car)) install.packages("lme4")
+if (!require(ez)) install.packages("ez")
+if (!require(strex)) install.packages("strex")
+if (!require(nlme)) install.packages("nlme")
+if (!require(lattice)) install.packages("lattice")
+if (!require(tinytex)) install.packages('tinytex')
+
+
+library("ggplot2")
+library("readxl")
+library("tidyverse")
+library("psych")
+library("car")
+library("lme4")
+library("reshape2")
+library("ez")
+library("strex")
+library("nlme")
+library("lattice")
+library("tinytex")
+
+
+```
+
+### Set directory and import data
+
+```{r}
+
+# adapt path and data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
+setwd('/Users/larawieland/Documents/ECN/Promotion/SALAD/hierarchical')
+extrac_file <- "/Users/larawieland/Documents/ECN/Promotion/SALAD/data_sum/operant_sample1.csv"
+extrac2_file <- "/Users/larawieland/Documents/ECN/Promotion/SALAD/data_sum/operant_sample1_diff.csv"
+
+# import data, set missings (999) to NA and turn into tibble
+data_imported <- read_csv2(extrac_file,na = c("999", "NA"))
+
+# import single trial dataset
+data_strials <- read_csv2('operant_sample1_singletrial.csv' ,na = c("999", "NA"))
+dat <- as_tibble(data_imported)
+dat_complete <- na.omit(dat) 
+rm(data_imported)
+
+# remove outliers (according to < 55% p_correct in all trials or 1/3 phases)
+
+dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
+dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
+
+```
+
+```{r, include=FALSE}
+
+# subset data for order (A=CT-ST,B=ST-CT)
+dat.order.A <- subset(dat, order == "1")
+dat.order.B <- subset(dat, order == "2")
+# subset data for order (A=CT-ST,B=ST-CT)
+dat.HC <- subset(dat, group == "1")
+dat.AD <- subset(dat, group == "2")
+
+# the following is just playing around:
+# arrange by age in descending order
+data_age_sorted <- dat %>% arrange(desc(age))
+
+# change variable height from cm to m
+dat.height_in_m <- dat %>% mutate(height = height/100)
+
+rm(data_age_sorted)
+rm(dat.height_in_m)
+
+```
+### Demographics and NP - Descriptive Stats and T-Tests between groups
+The dataset corresponds to sample 1 and includes `r nrow(dat)` subjects, of whom `r nrow(dat.AD)` are AD and `r nrow(dat.HC)` HC.
+```{r, include=FALSE}
+
+# These reproduced Zsuzsi's results: significant differences between groups in age and education, IQ_WST, num_forward, num_backward and DSST
+
+by(dat$age, dat$group, mean)
+# by(dat$age, dat$group, sd)
+t.test(age ~ group, data=dat)
+
+by(dat$education, dat$group, mean)
+# by(dat$education, dat$group, sd)
+t.test(education ~ group, data=dat)
+
+by(dat$weight, dat$group, mean)
+# by(dat$weight, dat$group, sd)
+t.test(weight ~ group, data=dat)
+
+# for IQ with dat_complete due to some NAs
+by(dat_complete$IQ_WST, dat_complete$group, mean)
+# by(dat$IQ_WST, dat$group, sd)
+t.test(IQ_WST ~ group, data=dat_complete)
+
+by(dat$num_forward, dat$group, mean)
+# by(dat$num_forward, dat$group, sd)
+t.test(num_forward ~ group, data=dat)
+
+by(dat$num_backward, dat$group, mean)
+# by(dat$num_backward, dat$group, sd)
+t.test(num_backward ~ group, data=dat)
+
+by(dat$tmt_a, dat$group, mean)
+# by(dat$tmt_a, dat$group, sd)
+t.test(tmt_a ~ group, data=dat)
+
+by(dat$tmt_b, dat$group, mean)
+# by(dat$tmt_b, dat$group, sd)
+t.test(tmt_b ~ group, data=dat)
+
+by(dat$dsst, dat$group, mean)
+# by(dat$dsst, dat$group, sd)
+t.test(dsst ~ group, data=dat)
+
+dat %>% summarize(mean_age = mean(age))
+
+```
+The groups are significantly different regarding age, education, IQ (num_forward, num_backward, DSST)
+
+```{r, include=FALSE}
+# as a first attempt tried with p_correct as dv for rmANOVA with within = volat (pre)
+
+# prepare data first: p_correct_T1 needs to be turned into p_correct_CT and P_correct_T2 into P_Correct_S for order = 1(A)
+
+dat.order.CTST <- dat.order.A %>% 
+
+rename(mean_RT_CT = mean_RT_T1) %>% 
+rename(p_correct_CT = p_correct_T1) %>% 
+rename(p_stay_CT = p_stay_T1) %>% 
+rename(p_switch_CT = p_switch_T1) %>%
+rename(p_win_stay_CT = p_win_stay_T1) %>% 
+rename(p_win_switch_CT = p_win_switch_T1) %>% 
+rename(p_lose_stay_CT = p_lose_stay_T1) %>% 
+rename(p_lose_switch_CT = p_lose_switch_T1) %>% 
+  
+rename(mean_RT_ST = mean_RT_T2) %>% 
+rename(p_correct_ST = p_correct_T2) %>% 
+rename(p_stay_ST = p_stay_T2) %>% 
+rename(p_switch_ST = p_switch_T2) %>% 
+rename(p_win_stay_ST = p_win_stay_T2) %>% 
+rename(p_win_switch_ST = p_win_switch_T2) %>% 
+rename(p_lose_stay_ST = p_lose_stay_T2) %>% 
+rename(p_lose_switch_ST = p_lose_switch_T2) %>%
+   
+rename(p_RT_pre_CT = p_RT_pre_T1) %>% 
+rename(p_RT_rev_CT = p_RT_rev_T1) %>% 
+rename(p_RT_post_CT = p_RT_post_T1) %>% 
+rename(p_correct_pre_CT = p_correct_pre_T1) %>% 
+rename(p_correct_rev_CT = p_correct_rev_T1) %>% 
+rename(p_correct_post_CT = p_correct_post_T1) %>% 
+rename(p_stay_pre_CT = p_stay_pre_T1) %>% 
+rename(p_stay_rev_CT = p_stay_rev_T1) %>% 
+rename(p_stay_post_CT = p_stay_post_T1) %>% 
+rename(p_sw_pre_CT = p_sw_pre_T1) %>% 
+rename(p_sw_rev_CT = p_sw_rev_T1) %>% 
+rename(p_sw_post_CT = p_sw_post_T1) %>% 
+rename(p_w_st_pre_CT = p_w_st_pre_T1) %>% 
+rename(p_w_st_rev_CT = p_w_st_rev_T1) %>% 
+rename(p_w_st_post_CT = p_w_st_post_T1) %>% 
+rename(p_l_sw_pre_CT = p_l_sw_pre_T1) %>% 
+rename(p_l_sw_rev_CT = p_l_sw_rev_T1) %>% 
+rename(p_l_sw_post_CT = p_l_sw_post_T1) %>% 
+  
+rename(p_RT_pre_ST = p_RT_pre_T2) %>% 
+rename(p_RT_rev_ST = p_RT_rev_T2) %>% 
+rename(p_RT_post_ST = p_RT_post_T2) %>% 
+rename(p_correct_pre_ST = p_correct_pre_T2) %>% 
+rename(p_correct_rev_ST = p_correct_rev_T2) %>% 
+rename(p_correct_post_ST = p_correct_post_T2) %>%
+rename(p_stay_pre_ST = p_stay_pre_T2) %>% 
+rename(p_stay_rev_ST = p_stay_rev_T2) %>% 
+rename(p_stay_post_ST = p_stay_post_T2) %>% 
+rename(p_sw_pre_ST = p_sw_pre_T2) %>% 
+rename(p_sw_rev_ST = p_sw_rev_T2) %>% 
+rename(p_sw_post_ST = p_sw_post_T2) %>% 
+rename(p_w_st_pre_ST = p_w_st_pre_T2) %>% 
+rename(p_w_st_rev_ST = p_w_st_rev_T2) %>% 
+rename(p_w_st_post_ST = p_w_st_post_T2) %>% 
+rename(p_l_sw_pre_ST = p_l_sw_pre_T2) %>% 
+rename(p_l_sw_rev_ST = p_l_sw_rev_T2) %>% 
+rename(p_l_sw_post_ST = p_l_sw_post_T2)
+
+# and the other way around for order = 2(B)
+
+dat.order.STCT <- dat.order.B %>% 
+
+rename(mean_RT_CT = mean_RT_T2) %>% 
+rename(p_correct_CT = p_correct_T2) %>% 
+rename(p_stay_CT = p_stay_T2) %>% 
+rename(p_switch_CT = p_switch_T2) %>%
+rename(p_win_stay_CT = p_win_stay_T2) %>% 
+rename(p_win_switch_CT = p_win_switch_T2) %>% 
+rename(p_lose_stay_CT = p_lose_stay_T2) %>% 
+rename(p_lose_switch_CT = p_lose_switch_T2) %>% 
+  
+rename(mean_RT_ST = mean_RT_T1) %>% 
+rename(p_correct_ST = p_correct_T1) %>% 
+rename(p_stay_ST = p_stay_T1) %>% 
+rename(p_switch_ST = p_switch_T1) %>% 
+rename(p_win_stay_ST = p_win_stay_T1) %>% 
+rename(p_win_switch_ST = p_win_switch_T1) %>% 
+rename(p_lose_stay_ST = p_lose_stay_T1) %>% 
+rename(p_lose_switch_ST = p_lose_switch_T1) %>%
+  
+rename(p_RT_pre_CT = p_RT_pre_T2) %>% 
+rename(p_RT_rev_CT = p_RT_rev_T2) %>% 
+rename(p_RT_post_CT = p_RT_post_T2) %>% 
+rename(p_correct_pre_CT = p_correct_pre_T2) %>% 
+rename(p_correct_rev_CT = p_correct_rev_T2) %>% 
+rename(p_correct_post_CT = p_correct_post_T2) %>% 
+rename(p_stay_pre_CT = p_stay_pre_T2) %>% 
+rename(p_stay_rev_CT = p_stay_rev_T2) %>% 
+rename(p_stay_post_CT = p_stay_post_T2) %>% 
+rename(p_sw_pre_CT = p_sw_pre_T2) %>% 
+rename(p_sw_rev_CT = p_sw_rev_T2) %>% 
+rename(p_sw_post_CT = p_sw_post_T2) %>% 
+rename(p_w_st_pre_CT = p_w_st_pre_T2) %>% 
+rename(p_w_st_rev_CT = p_w_st_rev_T2) %>% 
+rename(p_w_st_post_CT = p_w_st_post_T2) %>% 
+rename(p_l_sw_pre_CT = p_l_sw_pre_T2) %>% 
+rename(p_l_sw_rev_CT = p_l_sw_rev_T2) %>% 
+rename(p_l_sw_post_CT = p_l_sw_post_T2) %>% 
+  
+rename(p_RT_pre_ST = p_RT_pre_T1) %>% 
+rename(p_RT_rev_ST = p_RT_rev_T1) %>% 
+rename(p_RT_post_ST = p_RT_post_T1) %>% 
+rename(p_correct_pre_ST = p_correct_pre_T1) %>% 
+rename(p_correct_rev_ST = p_correct_rev_T1) %>% 
+rename(p_correct_post_ST = p_correct_post_T1) %>% 
+rename(p_stay_pre_ST = p_stay_pre_T1) %>% 
+rename(p_stay_rev_ST = p_stay_rev_T1) %>% 
+rename(p_stay_post_ST = p_stay_post_T1) %>% 
+rename(p_sw_pre_ST = p_sw_pre_T1) %>% 
+rename(p_sw_rev_ST = p_sw_rev_T1) %>% 
+rename(p_sw_post_ST = p_sw_post_T1) %>% 
+rename(p_w_st_pre_ST = p_w_st_pre_T1) %>% 
+rename(p_w_st_rev_ST = p_w_st_rev_T1) %>% 
+rename(p_w_st_post_ST = p_w_st_post_T1) %>% 
+rename(p_l_sw_pre_ST = p_l_sw_pre_T1) %>% 
+rename(p_l_sw_rev_ST = p_l_sw_rev_T1) %>% 
+rename(p_l_sw_post_ST = p_l_sw_post_T1)
+
+# merge them back together and clean WS
+dat_all <- bind_rows(dat.order.CTST,dat.order.STCT)
+
+rm(dat.order.CTST)
+rm(dat.order.STCT)
+rm(dat.order.A)
+rm(dat.order.B)
+
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_correct, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.correct <- melt(dat_all,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+        # The source columns
+    measure.vars=c("p_correct_pre_ST","p_correct_rev_ST","p_correct_post_ST","p_correct_pre_CT","p_correct_rev_CT","p_correct_post_CT"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="phase",
+    value.name="p_correct"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.correct$id <- str_last_number(longdat.correct$sub_id)
+longdat.correct$id <- as.factor(longdat.correct$id)
+longdat.correct$p_correct <- as.numeric(longdat.correct$p_correct)
+
+
+longdat.correct <- longdat.correct %>% arrange(id)
+
+longdat.correct <- longdat.correct %>% arrange(phase)
+
+longdat.correct$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.correct$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="post_ST"] <- "post_CT"
+
+longdat.correct <- longdat.correct %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.correct <- longdat.correct %>% mutate(cond = grepl("*CT",longdat.correct$phase)) 
+longdat.correct <- longdat.correct %>% mutate(cond2 = longdat.correct$cond*1) %>% rename(cond = longdat.correct$cond2)
+
+longdat.correct$group <- as.factor(longdat.correct$group) 
+levels(longdat.correct$group) <- c('HC', 'AD')
+
+longdat.correct$cond <- as.factor(longdat.correct$cond) 
+levels(longdat.correct$cond) <- c('Stress', 'Control')
+   
+longdat.HC.correct <- longdat.correct %>% filter(longdat.correct$group == 'HC')
+longdat.AD.correct <- longdat.correct %>% filter(longdat.correct$group == 'AD')
+
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_stay, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.stay <- melt(dat_all,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+        # The source columns
+    measure.vars=c("p_stay_pre_ST","p_stay_rev_ST","p_stay_post_ST","p_stay_pre_CT","p_stay_rev_CT","p_stay_post_CT"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="phase",
+    value.name="p_stay"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.stay$id <- str_last_number(longdat.stay$sub_id)
+longdat.stay$id <- as.factor(longdat.stay$id)
+longdat.stay$p_stay <- as.numeric(longdat.stay$p_stay)
+
+longdat.stay$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.stay$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_ST"] <- "post_CT"
+
+longdat.stay <- longdat.stay %>% arrange(phase)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.stay <- longdat.stay %>% mutate(cond = grepl("*CT",longdat.stay$phase))
+longdat.stay <- longdat.stay %>% mutate(cond2 = longdat.stay$cond*1) %>% rename(cond = longdat.stay$cond2)
+
+longdat.stay$group <- as.factor(longdat.stay$group) 
+levels(longdat.stay$group) <- c('HC', 'AD')
+
+longdat.stay$cond <- as.factor(longdat.stay$cond) 
+levels(longdat.stay$cond) <- c('Stress', 'Control')
+
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_sw, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.sw <- melt(dat_all,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+        # The source columns
+    measure.vars=c("p_sw_pre_ST","p_sw_rev_ST","p_sw_post_ST","p_sw_pre_CT","p_sw_rev_CT","p_sw_post_CT"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="phase",
+    value.name="p_switch"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.sw$id <- str_last_number(longdat.sw$sub_id)
+longdat.sw$id <- as.factor(longdat.sw$id)
+longdat.sw$p_switch <- as.numeric(longdat.sw$p_switch)
+
+longdat.sw$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.sw$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_ST"] <- "post_CT"
+
+longdat.sw <- longdat.sw %>% arrange(phase)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.sw <- longdat.sw %>% mutate(cond = grepl("*CT",longdat.sw$phase))
+longdat.sw <- longdat.sw %>% mutate(cond2 = longdat.sw$cond*1) %>% rename(cond = longdat.sw$cond2)
+
+longdat.sw$group <- as.factor(longdat.sw$group) 
+levels(longdat.sw$group) <- c('HC', 'AD')
+
+longdat.sw$cond <- as.factor(longdat.sw$cond) 
+levels(longdat.sw$cond) <- c('Stress', 'Control')
+
+longdat.HC.sw <- longdat.sw %>% filter(longdat.sw$group == 'HC')
+
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_loseswitch, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.lswitch <- melt(dat_all,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+        # The source columns
+    measure.vars=c("p_l_sw_pre_ST","p_l_sw_rev_ST","p_l_sw_post_ST","p_l_sw_pre_CT","p_l_sw_rev_CT","p_l_sw_post_CT"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="phase",
+    value.name="p_lswitch"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.lswitch$id <- str_last_number(longdat.lswitch$sub_id)
+longdat.lswitch$id <- as.factor(longdat.lswitch$id)
+longdat.lswitch$p_lswitch <- as.numeric(longdat.lswitch$p_lswitch)
+
+longdat.lswitch <- longdat.lswitch %>% arrange(id)
+
+longdat.lswitch <- longdat.lswitch %>% arrange(phase)
+
+longdat.lswitch$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.lswitch$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="post_ST"] <- "post_CT"
+
+longdat.lswitch <- longdat.lswitch %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.lswitch <- longdat.lswitch %>% mutate(cond = grepl("*CT",longdat.lswitch$phase))
+longdat.lswitch <- longdat.lswitch %>% mutate(cond2 = longdat.lswitch$cond*1) %>% rename(cond = longdat.lswitch$cond2)
+
+longdat.lswitch$group <- as.factor(longdat.lswitch$group) 
+levels(longdat.lswitch$group) <- c('HC', 'AD')
+
+longdat.lswitch$cond <- as.factor(longdat.lswitch$cond) 
+levels(longdat.lswitch$cond) <- c('Stress', 'Control')
+
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_winstay, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.winstay <- melt(dat_all,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+        # The source columns
+    measure.vars=c("p_w_st_pre_ST","p_w_st_rev_ST","p_w_st_post_ST","p_w_st_pre_CT","p_w_st_rev_CT","p_w_st_post_CT"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="phase",
+    value.name="p_winstay"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.winstay$id <- str_last_number(longdat.winstay$sub_id)
+longdat.winstay$id <- as.factor(longdat.winstay$id)
+longdat.winstay$p_winstay <- as.numeric(longdat.winstay$p_winstay)
+
+longdat.winstay <- longdat.winstay %>% arrange(id)
+
+longdat.winstay <- longdat.winstay %>% arrange(phase)
+
+longdat.winstay$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.winstay$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="post_ST"] <- "post_CT"
+
+longdat.winstay <- longdat.winstay %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.winstay <- longdat.winstay %>% mutate(cond = grepl("*CT",longdat.winstay$phase))
+longdat.winstay <- longdat.winstay %>% mutate(cond2 = longdat.winstay$cond*1) %>% rename(cond = longdat.winstay$cond2)
+
+longdat.winstay$group <- as.factor(longdat.winstay$group) 
+levels(longdat.winstay$group) <- c('HC', 'AD')
+
+longdat.winstay$cond <- as.factor(longdat.winstay$cond) 
+levels(longdat.winstay$cond) <- c('Stress', 'Control')
+
+longdat.HC.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'HC')
+longdat.AD.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'AD')
+```
+
+
+```{r, include=FALSE}
+## transfer from wide to long format p_RT, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.RT <- melt(dat_all,
+# ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id", "group","order"),
+# The source columns
+    measure.vars=c("p_RT_pre_ST","p_RT_rev_ST","p_RT_post_ST","p_RT_pre_CT","p_RT_rev_CT","p_RT_post_CT"),
+# Name of the destination column that will identify the original
+# column that the measurement came from
+    variable.name="phase",
+    value.name="p_RT"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.RT$id <- str_last_number(longdat.RT$sub_id)
+longdat.RT$id <- as.factor(longdat.RT$id)
+longdat.RT$p_RT <- as.numeric(longdat.RT$p_RT)
+
+longdat.RT <- longdat.RT %>% arrange(id)
+
+longdat.RT <- longdat.RT %>% arrange(phase)
+
+longdat.RT$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.RT$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_ST"] <- "pre_CT"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_ST"] <- "rev_CT"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_ST"] <- "post_CT"
+
+longdat.RT <- longdat.RT %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.RT <- longdat.RT %>% mutate(cond = grepl("*CT",longdat.RT$phase))
+longdat.RT <- longdat.RT %>% mutate(cond2 = longdat.RT$cond*1) %>% rename(cond = longdat.RT$cond2)
+
+longdat.RT$group <- as.factor(longdat.RT$group) 
+levels(longdat.RT$group) <- c('HC', 'AD')
+
+longdat.RT$cond <- as.factor(longdat.RT$cond) 
+levels(longdat.RT$cond) <- c('Stress', 'Control')
+
+longdat.HC.RT <- longdat.RT %>% filter(longdat.RT$group == 'HC')
+longdat.AD.RT <- longdat.RT %>% filter(longdat.RT$group == 'AD')
+
+```
+
+**Study design**
+Within subject repeated measure: cond Stress(ST)/Control(CT)
+Within subject measure: volat/phase (pre/rev/post) of Reversal Learning Task
+
+### rmANOVA p_correct: 
+1. for HC sample only main effect of volat, a non-significant interaction of volat * cond
+2. for AD sample: here the volat * cond interaction stays significant as reflected in plot
+3. for whole sample: main effect for volat and group, trendwise interaction effect
+```{r}
+
+# now ezANOVA can be filled with dv = p_correct, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
+
+# first for HC only: 
+res.HC.correct <- ezANOVA(longdat.HC.correct, p_correct, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.HC.correct
+
+# then for AD only: 
+res.AD.correct <- ezANOVA(longdat.AD.correct, p_correct, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.AD.correct
+
+# now for whole sample
+res.correct <- ezANOVA(longdat.correct, p_correct, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.correct
+
+# make a boxplot to take a look at distribution of p_correct group and phasewise
+# panels show different groups
+ggplot(longdat.correct, aes(x=phase, y=p_correct)) + geom_boxplot() + facet_grid(cols = vars(group))
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = longdat.correct
+   , dv = .(p_correct)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_correct"
+   , split_lab = "Condition"
+)
+
+# plot subjectwise trajectories across all volat phases in both conditions
+xyplot(p_correct ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.correct, type='b')
+
+
+```
+
+## rmANOVA Model p_correct
+```{r}
+
+# predict p_correct only from intercept, 2 repeated measure factors (volat and cond2) are nested within participant (id)
+basmod <- lme(p_correct ~ 1,data = longdat.correct, random = ~1|id/volat/cond2, method = "ML")
+
+mod <- lme(p_correct ~ volat, random = ~1|id/volat/cond2,data = longdat.correct, method = "ML")
+
+# main effects
+groupmod <- update(basmod, .~. + group)
+volatmod <- update(groupmod, .~. + volat)
+condmod <- update(volatmod, .~. + cond2)
+
+# 2-way interactions
+group_volat <- update(condmod, .~. + group:volat)
+group_cond <- update(group_volat, .~. + group:cond2)
+volat_cond <- update(group_cond, .~. + volat:cond2)
+
+# 3-way interactions
+group_volat_cond <- update(volat_cond, .~. + group:volat:cond2)
+
+# compare models with anova
+anova(basmod, mod, groupmod, volatmod, condmod, group_volat, group_cond, volat_cond, group_volat_cond)
+
+ggplot(longdat.correct, aes(x = volat,y = p_correct, col = cond)) + stat_summary(fun = mean, geom = "point") + stat_summary(fun = mean, geom = "line", aes(group = cond)) + facet_grid(group ~.)
+
+
+```
+
+## rmANOVA p_stay
+```{r, include=FALSE}
+
+# now ezANOVA can be filled with dv = p_stay, within-variable = cond, between-variable = group and type 3 sums of squares
+
+res.stay <- ezANOVA(longdat.stay, p_stay, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+
+# make a boxplot to take a look at distribution of p_stay group and phasewise
+# panels show different groups
+ggplot(longdat.stay, aes(x=phase, y=p_stay)) + geom_boxplot() + facet_grid(cols = vars(group))
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = longdat.stay
+   , dv = .(p_stay)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_stay"
+   , split_lab = "Condition"
+)
+
+# plot subjectwise trajectories across all volat phases in both conditions
+xyplot(p_stay ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.stay, type='b')
+
+```
+
+## rmANOVA p_sw
+```{r, include=FALSE}
+
+# now ezANOVA can be filled with dv = p_switch, within-variable = cond, between-variable = group and type 2 sums of squares
+
+# first for HC only
+res.HC.sw <- ezANOVA(longdat.HC.sw, p_switch, id, within = .(volat,cond), detailed = TRUE, type = 3)
+
+# now for whole sample
+res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = group, detailed = TRUE, type =3)
+
+
+# make a boxplot to take a look at distribution of p_switch group and phasewise
+# panels show different groups
+ggplot(longdat.sw, aes(x=phase, y=p_switch)) + geom_boxplot() + facet_grid(cols = vars(group))
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = longdat.sw
+   , dv = .(p_switch)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_switch"
+   , split_lab = "Condition"
+)
+
+# plot subjectwise trajectories across all volat phases in both conditions
+xyplot(p_switch ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw, type='b')
+
+```
+
+## rmANOVA p_lswitch
+```{r, include=FALSE}
+
+# now ezANOVA can be filled with dv = p_lswitch, within-variable = cond, between-variable = group and type 3 sums of squares
+
+res.lswitch <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+
+# make a boxplot to take a look at distribution of p_lswitch group and phasewise, panels show different groups
+ggplot(longdat.lswitch, aes(x=phase, y=p_lswitch)) + geom_boxplot() + facet_grid(group ~.)
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = longdat.lswitch
+   , dv = .(p_lswitch)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_lswitch"
+   , split_lab = "Condition"
+)
+
+# plot subjectwise trajectories across all volat phases in both conditions
+xyplot(p_lswitch ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.lswitch, type='b')
+
+```
+
+## rmANOVA p_winstay
+1. for HC sample only main effect of volat, a non-significant interaction of volat*cond
+2. for AD sample: neither a main effect of volat nor an interaction of volat * cond
+3. for whole sample: no main effect of group, trendwise main effect of volat, significant volat * cond * group interaction
+```{r}
+# now ezANOVA can be filled with dv = p_correct, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
+
+# first for HC only: only main effect for volat, a non-significant interaction for volat*cond
+res.HC.winstay <- ezANOVA(longdat.HC.winstay, p_winstay, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.HC.winstay
+
+# then for AD only: a non-significant main effect for volat and interaction for volat*cond
+res.AD.winstay <- ezANOVA(longdat.AD.winstay, p_winstay, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.AD.winstay
+
+# now for the whole sample
+res.winstay <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.winstay
+
+# make a boxplot to take a look at distribution of p_winstay group and phasewise
+# panels show different groups
+ggplot(longdat.sw, aes(x=phase, y=p_switch)) + geom_boxplot() + facet_grid(cols = vars(group))
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = longdat.winstay
+   , dv = .(p_winstay)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_winstay"
+   , split_lab = "Condition"
+)
+
+# plot subjectwise trajectories across all volat phases in both conditions
+xyplot(p_winstay ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.winstay, type='b')
+
+```
+## rmANOVA Model p_winstay
+```{r}
+
+# predict p_winstay only from intercept, 2 repeated measure factors (volat and cond2) are nested within participant (id)
+basmod <- lme(p_winstay ~ 1,data = longdat.winstay, random = ~1|id/volat/cond2, method = "ML")
+
+# 
+mod <- lme(p_winstay ~ volat, random = ~1|id/volat/cond2,data = longdat.winstay, method = "ML")
+
+# main effects
+groupmod <- update(basmod, .~. + group)
+volatmod <- update(groupmod, .~. + volat)
+condmod <- update(volatmod, .~. + cond2)
+
+# 2-way interactions
+group_volat <- update(condmod, .~. + group:volat)
+group_cond <- update(group_volat, .~. + group:cond2)
+volat_cond <- update(group_cond, .~. + volat:cond2)
+
+# 3-way interactions
+group_volat_cond <- update(volat_cond, .~. + group:volat:cond2)
+
+# compare models with anova
+anova(basmod, mod, groupmod, volatmod, condmod, group_volat, group_cond, volat_cond, group_volat_cond)
+
+ggplot(longdat.winstay, aes(x = volat,y = p_winstay, col = cond)) + stat_summary(fun = mean, geom = "point") + stat_summary(fun = mean, geom = "line", aes(group = cond)) + facet_grid(group ~.)
+
+```
+
+## rmANOVA Reaction Times
+1. for HC sample no main effect of volat, a significant interaction of volat * cond
+2. for AD sample: neither a main effect of volat nor an interaction of volat * cond
+3. for whole sample: no main effect of group, no main effect of volat, significant volat * cond * group interaction
+```{r}
+
+# now ezANOVA can be filled with dv = p_RT, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
+
+# first for HC only
+res.HC.RT <- ezANOVA(longdat.HC.RT, p_RT, id, within = .(volat,cond), detailed = TRUE, type = 3)
+
+# first for HC only
+res.AD.RT <- ezANOVA(longdat.AD.RT, p_RT, id, within = .(volat,cond), detailed = TRUE, type = 3)
+
+# now for whole sample
+res.RT <- ezANOVA(longdat.RT, p_RT, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+
+# make a boxplot to take a look at distribution of RT group and phasewise, panels show different group
+ggplot(longdat.RT, aes(x=phase, y=p_RT)) + geom_boxplot() + facet_grid(cols = vars(group))
+
+ezPlot(
+   data = longdat.RT
+   , dv = .(p_RT)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(cond)
+   , col = .(group)
+   , y_lab = "p_RT"
+   , split_lab = "Condition"
+)
+
+xyplot(p_RT ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.RT, type='b')
+
+```
+## rmANOVA Model p_RT
+```{r}
+
+# predict p_winstay only from intercept, 2 repeated measure factors (volat and cond2) are nested within participant (id)
+basmod <- lme(p_RT ~ 1,data = longdat.RT, random = ~1|id/volat/cond2, method = "ML")
+
+# 
+mod <- lme(p_RT ~ volat, random = ~1|id/volat/cond2,data = longdat.RT, method = "ML")
+
+# main effects
+groupmod <- update(basmod, .~. + group)
+volatmod <- update(groupmod, .~. + volat)
+condmod <- update(volatmod, .~. + cond2)
+
+# 2-way interactions
+group_volat <- update(condmod, .~. + group:volat)
+group_cond <- update(group_volat, .~. + group:cond2)
+
+# 3-way interactions
+group_volat_cond <- update(group_cond, .~. + group:volat:cond2)
+
+# compare models with anova
+anova(basmod, mod, groupmod, volatmod, condmod, group_volat, group_cond, group_volat_cond)
+
+ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mean, geom = "point") + stat_summary(fun = mean, geom = "line", aes(group = cond)) + facet_grid(group ~.)
+
+```
+
+## Hierarchical Modeling
+```{r}
+
+# compare model with intercept only and random intercept to verify that hierarchical modeling makes sense
+interceptOnly <- gls(p_correct ~ 1,data = longdat.correct, method = "ML")
+randomInterceptOnly <- lme(p_correct ~1, data = longdat.correct, random = ~1|sub_id, method = "ML")
+mod1 <- glmer()
+
+logLik(interceptOnly)*-2
+logLik(randomInterceptOnly)*-2
+
+summary(randomInterceptOnly)
+summary(interceptOnly)
+
+anova(interceptOnly,randomInterceptOnly)
+
+
+mod1<-glmer(Choice_t~Group*Cond*volat+(1|sub_idx), data=data,family=binomial)
+
+mod2<-glmer(winstayanova~Group*Cond*volat+(1|sub_idx), data=data,family=binomial)
+
+
+# our version of winstay
+data$choiceanova <- data$Choice_t
+data$choiceanova[data$Choice_t == 0] <- -1
+
+data$winstayanova <- data$choiceanova*data$winstay_t1
+data$winstayanova[data$winstayanova == -1] <- 0
+
+```
