@@ -10,7 +10,7 @@ output:
 fig_caption: yes
 ---
 
-### Introduction
+### New Introduction
 
 This script reproduces Zsuzsi's **analyses on the SALAD dataset** (descriptive and rmANOVA):
 1. Mixed design with between-factor two groups (AD/HC)
