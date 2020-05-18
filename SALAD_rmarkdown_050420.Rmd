@@ -11,7 +11,7 @@ fig_caption: yes
 ---
 
 ### Introduction
-
+##teresa test
 This script reproduces Zsuzsi's **analyses on the SALAD dataset** (descriptive and rmANOVA):
 1. Mixed design with between-factor two groups (AD/HC)
 2. Within-factor **cond**: 2 Levels (Stress vs. Control Condition)
@@ -872,20 +872,7 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 
 ## Hierarchical Modeling
 ```{r}
-
-# compare model with intercept only and random intercept to verify that hierarchical modeling makes sense
-interceptOnly <- gls(p_correct ~ 1,data = longdat.correct, method = "ML")
-randomInterceptOnly <- lme(p_correct ~1, data = longdat.correct, random = ~1|sub_id, method = "ML")
-mod1 <- glmer()
-
-logLik(interceptOnly)*-2
-logLik(randomInterceptOnly)*-2
-
-summary(randomInterceptOnly)
-summary(interceptOnly)
-
-anova(interceptOnly,randomInterceptOnly)
-
+# use single trial dataset to predict correct (Choice_t is single-trial equivalent to p_correct)
 
 mod1<-glmer(Choice_t~Group*Cond*volat+(1|sub_idx), data=data,family=binomial)
 
