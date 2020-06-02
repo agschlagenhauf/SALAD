@@ -64,15 +64,16 @@ library("tinytex")
 ```{r}
 
 # adapt path and data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
-setwd('/Users/larawieland/Documents/ECN/Promotion/SALAD/hierarchical')
-extrac_file <- "/Users/larawieland/Documents/ECN/Promotion/SALAD/data_sum/operant_sample1.csv"
-extrac2_file <- "/Users/larawieland/Documents/ECN/Promotion/SALAD/data_sum/operant_sample1_diff.csv"
+setwd('/cloud/project/')
+extrac_file <- "data_sum/operant_sample1.csv"
+extrac_file_2 <- "data_sum/operant_sample1_diff.csv"
+sing_trial_file <- "hierarchical/operant_sample1_singletrial.csv"
 
 # import data, set missings (999) to NA and turn into tibble
 data_imported <- read_csv2(extrac_file,na = c("999", "NA"))
 
 # import single trial dataset
-data_strials <- read_csv2('operant_sample1_singletrial.csv' ,na = c("999", "NA"))
+data_strials <- read_csv2(sing_trial_file,na = c("999", "NA"))
 dat <- as_tibble(data_imported)
 dat_complete <- na.omit(dat) 
 rm(data_imported)
@@ -871,18 +872,25 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 
 ## Hierarchical Modeling
 ```{r}
-# use single trial dataset to predict correct (Choice_t is single-trial equivalent to p_correct)
 
-mod1<-glmer(Choice_t~Group*Cond*volat+(1|sub_idx), data=data,family=binomial)
 
-mod2<-glmer(winstayanova~Group*Cond*volat+(1|sub_idx), data=data,family=binomial)
-
+data_strials$choiceanova <- data_strials$Choice_t
+data_strials$choiceanova[data_strials$Choice_t == 0] <- -1
 
 # our version of winstay
-data$choiceanova <- data$Choice_t
-data$choiceanova[data$Choice_t == 0] <- -1
+data_strials$winstayanova <- data_strials$choiceanova*data_strials$winstay_t1
+data_strials$winstayanova[data_strials$winstayanova == -1] <- 0
 
-data$winstayanova <- data$choiceanova*data$winstay_t1
-data$winstayanova[data$winstayanova == -1] <- 0
+# our version of loseshift
+data_strials$loseshiftanova <- data_strials$choiceanova*data_strials$loseshift_t1
+data_strials$loseshiftanova[data_strials$loseshiftanova == -1] <- 0
+
+# use single trial dataset to predict correct (Choice_t is single-trial equivalent to p_correct)
+
+mod1<-glmer(Choice_t~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
+
+mod2<-glmer(winstayanova~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
+
+mod3<-glmer(loseshiftanova~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
 
 ```
