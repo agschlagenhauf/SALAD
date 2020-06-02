@@ -1,0 +1,110 @@
+---
+title: "SALAD_modeling_prep"
+author: "Lara Wieland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+fig_caption: yes
+---
+
+
+### Load packages
+
+```{r, include=FALSE}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(ggplot2)) install.packages("readxl")
+if (!require(tidyverse)) install.packages("tidyverse")
+if (!require(psych)) install.packages("psych")
+if (!require(reshape2)) install.packages("reshape2")
+if (!require(car)) install.packages("car")
+if (!require(car)) install.packages("lme4")
+if (!require(ez)) install.packages("ez")
+if (!require(strex)) install.packages("strex")
+if (!require(nlme)) install.packages("nlme")
+if (!require(lattice)) install.packages("lattice")
+if (!require(tinytex)) install.packages('tinytex')
+if (!require(tinytex)) install.packages('scales')
+
+library("ggplot2")
+library("readxl")
+library("tidyverse")
+library("psych")
+library("car")
+library("lme4")
+library("reshape2")
+library("ez")
+library("strex")
+library("nlme")
+library("lattice")
+library("tinytex")
+library("scales")
+
+```
+
+```{r}
+
+# adapt path and data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
+setwd('/cloud/project/')
+extrac_file <- "data_sum/operant_sample1.csv"
+extrac_file_2 <- "data_sum/operant_sample1_diff.csv"
+
+# import data, set missings (999) to NA and turn into tibble
+my_data <- read_csv2(extrac_file,na = c("999", "NA"))
+
+# remove outliers (according to < 55% p_correct in all trials or 1/3 phases)
+
+dat.outlier.T1 <- my_data %>% filter(p_correct_T1 < .55)
+dat.outlier.T2 <- my_data %>% filter(p_correct_T2 < .55)
+
+```
+
+```{r cars}
+
+# attempts to write a function to detect outliers
+is_outlier <- function(x) {
+  return(x < .55)
+}
+
+# now print outlier labels (in this case the row number)
+my_data$outlier <- my_data$outlier <- my_data$p_correct_T1 < .55
+
+my_data <- my_data %>% 
+my_data$group <- group_level
+
+my_data$p_correct_T1 <- as.numeric(my_data$p_correct_T1)
+my_data$p_correct_T2 <- as.numeric(my_data$p_correct_T2)
+
+p.1 <- ggplot(my_data, aes(group,p_correct_T1)) +
+  geom_boxplot() +
+  geom_text(aes(label = sub_id), size = 3, na.rm = TRUE, hjust = -0.3)
+
+p.2 <- ggplot(my_data, aes(group,p_correct_T2)) +
+  geom_boxplot() +
+  geom_text(aes(label = sub_id), size = 3, na.rm = TRUE, hjust = -0.3)
+
+# code from R Course
+library(ggforce)
+my_data %>%
+  mutate(row_number = seq(1:nrow(my_data))) %>%
+  mutate(outlier = ifelse(is_outlier(PFratio), row_number, as.numeric(NA))) %>%
+  ggplot(., aes(x = INHdivlev, y = PFratio)) +
+  geom_boxplot() +
+  geom_sina(aes(x = INHdivlev, y = PFratio), method = "counts", scale = F) +
+  geom_text(aes(label = outlier), size = 2, nudge_x = 0.15, na.rm = TRUE, hjust = -0.3)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
