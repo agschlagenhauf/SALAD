@@ -47,6 +47,7 @@ if (!require(knitr)) install.packages("knitr")
 if (!require(kableExtra)) install.packages('kableExtra')
 if (!require(stringr)) install.packages('stringr')
 if (!require(stringr)) install.packages('hypr')
+if (!require(stringr)) install.packages('schoRsch')
 
 
 library("ggplot2")
@@ -67,6 +68,7 @@ library("knitr")
 library("kableExtra")
 library("stringr")
 library("hypr")
+library('schoRsch')
 
 ```
 
@@ -631,6 +633,9 @@ res.AD.correct
 res.correct <- ezANOVA(longdat.correct, p_correct, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 res.correct
 
+# and make it look nicer
+anova_out(res.correct)
+
 # make a boxplot to take a look at distribution of p_correct group and phasewise
 # panels show different groups
 ggplot(longdat.correct, aes(x=phase, y=p_correct)) + geom_boxplot() + facet_grid(cols = vars(group))
@@ -691,6 +696,9 @@ ggplot(longdat.correct, aes(x = volat,y = p_correct, col = cond)) + stat_summary
 
 res.stay <- ezANOVA(longdat.stay, p_stay, id, within = .(volat,cond), between = .(group), detailed = TRUE, type = 3)
 
+# and make it look nicer
+anova_out(res.stay)
+
 # make a boxplot to take a look at distribution of p_stay group and phasewise
 # panels show different groups
 ggplot(longdat.stay, aes(x=phase, y=p_stay)) + geom_boxplot() + facet_grid(cols = vars(group))
@@ -725,6 +733,8 @@ res.HC.sw <- ezANOVA(longdat.HC.sw, p_switch, id, within = .(volat,cond), detail
 # now for whole sample
 res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = .(group),between_covariates = .(age), detailed = TRUE, type =3)
 
+# and make it look nicer
+anova_out(res.sw)
 
 # make a boxplot to take a look at distribution of p_switch group and phasewise
 # panels show different groups
@@ -755,6 +765,9 @@ xyplot(p_switch ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw
 # now ezANOVA can be filled with dv = p_lswitch, within-variable = cond, between-variable = group and type 3 sums of squares
 
 res.lswitch <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
+
+# and make it look nicer
+anova_out(res.lswitch)
 
 # make a boxplot to take a look at distribution of p_lswitch group and phasewise, panels show different groups
 ggplot(longdat.lswitch, aes(x=phase, y=p_lswitch)) + geom_boxplot() + facet_grid(group ~.)
@@ -796,6 +809,9 @@ res.AD.winstay
 # now for the whole sample
 res.winstay <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 res.winstay
+
+# and make it look nicer
+anova_out(res.winstay)
 
 # make a boxplot to take a look at distribution of p_winstay group and phasewise
 # panels show different groups
@@ -865,6 +881,9 @@ res.AD.RT <- ezANOVA(longdat.AD.RT, p_RT, id, within = .(volat,cond), detailed =
 # now for whole sample
 res.RT <- ezANOVA(longdat.RT, p_RT, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 
+# and make it look nicer
+anova_out(res.RT)
+
 # make a boxplot to take a look at distribution of RT group and phasewise, panels show different group
 ggplot(longdat.RT, aes(x=phase, y=p_RT)) + geom_boxplot() + facet_grid(cols = vars(group))
 
@@ -927,21 +946,21 @@ data_new <- data_strials %>% group_by(sub_idx,Cond) %>%
           w_stay = stay*Outcome, 
           switch = c(Choice_t[1:length(Choice_t)-1]!=Choice_t[2:length(Choice_t)],NaN),
           l_switch = switch*(1-Outcome))
-                                                             
-# move important variables to first columns
-data_strials <- data_strials %>%select(winstayanova, everything())
-data_strials <- data_strials %>%select(loseshiftanova, everything())
-data_strials <- data_strials %>%select(volat, everything())
-data_strials <- data_strials %>%select(choiceanova, everything())
-
-# use single trial dataset to predict Correct, w_stay, l_switch
+                                                            
+# use single trial dataset to predict Correct, w_stay, l_switch in a nested model (1) and a simple model (1a)
 
 mod1.w_stay <-glmer(w_stay~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.w_stay <-glmer(w_stay~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial)
+
 mod1.l_switch <-glmer(l_switch~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
-mod1.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.l_switch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial)
+
+mod1.correct <-glmer(Correct~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
+
 
 mod2.w_stay <-glmer(w_stay~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
-mod2.l_switch <-glmer(l_switch~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
+mod2.l_switch <-glmer(l_switch~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial,nAGQ = 0)
 mod2.correct <-glmer(Correct~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
 
 ```
