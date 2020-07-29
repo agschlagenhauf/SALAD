@@ -37,10 +37,17 @@ if (!require(reshape2)) install.packages("reshape2")
 if (!require(car)) install.packages("car")
 if (!require(car)) install.packages("lme4")
 if (!require(ez)) install.packages("ez")
+if (!require(ez)) install.packages("broom")
 if (!require(strex)) install.packages("strex")
 if (!require(nlme)) install.packages("nlme")
 if (!require(lattice)) install.packages("lattice")
 if (!require(tinytex)) install.packages('tinytex')
+if (!require(tinytex)) install.packages('purrr')
+if (!require(knitr)) install.packages("knitr")
+if (!require(kableExtra)) install.packages('kableExtra')
+if (!require(stringr)) install.packages('stringr')
+if (!require(stringr)) install.packages('hypr')
+if (!require(stringr)) install.packages('schoRsch')
 
 
 library("ggplot2")
@@ -51,11 +58,17 @@ library("car")
 library("lme4")
 library("reshape2")
 library("ez")
+library("broom")
 library("strex")
 library("nlme")
 library("lattice")
 library("tinytex")
-
+library("purrr")
+library("knitr")
+library("kableExtra")
+library("stringr")
+library("hypr")
+library('schoRsch')
 
 ```
 
@@ -63,22 +76,25 @@ library("tinytex")
 
 ```{r}
 
-# adapt path and data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
+# adapt path to data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
 setwd('/cloud/project/')
 extrac_file <- "data_sum/operant_sample1.csv"
-extrac_file_2 <- "data_sum/operant_sample1_diff.csv"
+extrac_file_2 <- "data_sum/operant_sample1_diffstay.csv"
+
+# adapt path to data you want to import, sing_trial_file_2 should be used because it includes C from Matlab
 sing_trial_file <- "hierarchical/operant_sample1_singletrial.csv"
+sing_trial_file_2 <- "hierarchical/operant_sample1_singtrial_wC.csv"
 
 # import data, set missings (999) to NA and turn into tibble
-data_imported <- read_csv2(extrac_file,na = c("999", "NA"))
-
-# import single trial dataset
-data_strials <- read_csv2(sing_trial_file,na = c("999", "NA"))
+data_imported <- read_csv2(extrac_file_2,na = c("999", "NA"))
 dat <- as_tibble(data_imported)
-dat_complete <- na.omit(dat) 
 rm(data_imported)
 
-# remove outliers (according to < 55% p_correct in all trials or 1/3 phases)
+# import single trial dataset
+data_strials <- read_csv2(sing_trial_file_2,na = c("999", "NA"))
+
+# create datasets with only complete subjects or removed outliers (according to < 55% p_correct in all trials or 1/3 phases)
+dat_complete <- na.omit(dat) 
 
 dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
 dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
@@ -86,6 +102,7 @@ dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
 ```
 
 ```{r, include=FALSE}
+## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES
 
 # subset data for order (A=CT-ST,B=ST-CT)
 dat.order.A <- subset(dat, order == "1")
@@ -148,14 +165,24 @@ by(dat$dsst, dat$group, mean)
 # by(dat$dsst, dat$group, sd)
 t.test(dsst ~ group, data=dat)
 
-dat %>% summarize(mean_age = mean(age))
+mean.sum <- dat %>% group_by(group) %>% summarize(mean_age = mean(age))
+
+options(knitr.kable.NA = "")
+# then print it in a table using the kable command
+
+kable(
+  mean.sum,
+  col.names = c("Groups", "Mean Age")
+) %>%
+  kable_styling("striped") %>%
+  footnote("HC = Healthy Controls, AD = Alcoholic Disorder", general_title = "Demographic and neuropsychological data")
+#####
 
 ```
 The groups are significantly different regarding age, education, IQ (num_forward, num_backward, DSST)
 
 ```{r, include=FALSE}
-# as a first attempt tried with p_correct as dv for rmANOVA with within = volat (pre)
-
+## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES
 # prepare data first: p_correct_T1 needs to be turned into p_correct_CT and P_correct_T2 into P_Correct_S for order = 1(A)
 
 dat.order.CTST <- dat.order.A %>% 
@@ -293,7 +320,7 @@ rm(dat.order.B)
 
 longdat.correct <- melt(dat_all,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
         # The source columns
     measure.vars=c("p_correct_pre_ST","p_correct_rev_ST","p_correct_post_ST","p_correct_pre_CT","p_correct_rev_CT","p_correct_post_CT"),
         # Name of the destination column that will identify the original
@@ -315,9 +342,13 @@ longdat.correct <- longdat.correct %>% arrange(phase)
 longdat.correct$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.correct$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.correct$volat)[levels(longdat.correct$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.correct$volat)[levels(longdat.correct$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.correct$volat)[levels(longdat.correct$volat)=="post_ST"] <- "post_CT"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="pre_ST"] <- "pre"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="rev_ST"] <- "rev"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="post_ST"] <- "post"
+
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="pre_CT"] <- "pre"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="rev_CT"] <- "rev"
+levels(longdat.correct$volat)[levels(longdat.correct$volat)=="post_CT"] <- "post"
 
 longdat.correct <- longdat.correct %>% arrange(id)
 
@@ -343,7 +374,7 @@ longdat.AD.correct <- longdat.correct %>% filter(longdat.correct$group == 'AD')
 
 longdat.stay <- melt(dat_all,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
         # The source columns
     measure.vars=c("p_stay_pre_ST","p_stay_rev_ST","p_stay_post_ST","p_stay_pre_CT","p_stay_rev_CT","p_stay_post_CT"),
         # Name of the destination column that will identify the original
@@ -360,11 +391,15 @@ longdat.stay$p_stay <- as.numeric(longdat.stay$p_stay)
 longdat.stay$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.stay$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_ST"] <- "post_CT"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_ST"] <- "pre"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_ST"] <- "rev"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_ST"] <- "post"
 
-longdat.stay <- longdat.stay %>% arrange(phase)
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_CT"] <- "pre"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_CT"] <- "rev"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_CT"] <- "post"
+
+longdat.stay <- longdat.stay %>% arrange(id)
 
 # extract string ST or CT from phase strings and turn it into logical, then numeric
 longdat.stay <- longdat.stay %>% mutate(cond = grepl("*CT",longdat.stay$phase))
@@ -385,7 +420,7 @@ levels(longdat.stay$cond) <- c('Stress', 'Control')
 
 longdat.sw <- melt(dat_all,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
         # The source columns
     measure.vars=c("p_sw_pre_ST","p_sw_rev_ST","p_sw_post_ST","p_sw_pre_CT","p_sw_rev_CT","p_sw_post_CT"),
         # Name of the destination column that will identify the original
@@ -402,11 +437,15 @@ longdat.sw$p_switch <- as.numeric(longdat.sw$p_switch)
 longdat.sw$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.sw$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_ST"] <- "post_CT"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_ST"] <- "pre"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_ST"] <- "rev"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_ST"] <- "post"
 
-longdat.sw <- longdat.sw %>% arrange(phase)
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_CT"] <- "pre"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_CT"] <- "rev"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_CT"] <- "post"
+
+longdat.sw <- longdat.sw %>% arrange(id)
 
 # extract string ST or CT from phase strings and turn it into logical, then numeric
 longdat.sw <- longdat.sw %>% mutate(cond = grepl("*CT",longdat.sw$phase))
@@ -429,7 +468,7 @@ longdat.HC.sw <- longdat.sw %>% filter(longdat.sw$group == 'HC')
 
 longdat.lswitch <- melt(dat_all,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
         # The source columns
     measure.vars=c("p_l_sw_pre_ST","p_l_sw_rev_ST","p_l_sw_post_ST","p_l_sw_pre_CT","p_l_sw_rev_CT","p_l_sw_post_CT"),
         # Name of the destination column that will identify the original
@@ -443,16 +482,17 @@ longdat.lswitch$id <- str_last_number(longdat.lswitch$sub_id)
 longdat.lswitch$id <- as.factor(longdat.lswitch$id)
 longdat.lswitch$p_lswitch <- as.numeric(longdat.lswitch$p_lswitch)
 
-longdat.lswitch <- longdat.lswitch %>% arrange(id)
-
-longdat.lswitch <- longdat.lswitch %>% arrange(phase)
 
 longdat.lswitch$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.lswitch$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="post_ST"] <- "post_CT"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="pre_ST"] <- "pre"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="rev_ST"] <- "rev"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="post_ST"] <- "post"
+
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="pre_CT"] <- "pre"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="rev_CT"] <- "rev"
+levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="post_CT"] <- "post"
 
 longdat.lswitch <- longdat.lswitch %>% arrange(id)
 
@@ -475,7 +515,7 @@ levels(longdat.lswitch$cond) <- c('Stress', 'Control')
 
 longdat.winstay <- melt(dat_all,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
         # The source columns
     measure.vars=c("p_w_st_pre_ST","p_w_st_rev_ST","p_w_st_post_ST","p_w_st_pre_CT","p_w_st_rev_CT","p_w_st_post_CT"),
         # Name of the destination column that will identify the original
@@ -489,16 +529,16 @@ longdat.winstay$id <- str_last_number(longdat.winstay$sub_id)
 longdat.winstay$id <- as.factor(longdat.winstay$id)
 longdat.winstay$p_winstay <- as.numeric(longdat.winstay$p_winstay)
 
-longdat.winstay <- longdat.winstay %>% arrange(id)
-
-longdat.winstay <- longdat.winstay %>% arrange(phase)
-
 longdat.winstay$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.winstay$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="post_ST"] <- "post_CT"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="pre_ST"] <- "pre"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="rev_ST"] <- "rev"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="post_ST"] <- "post"
+
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="pre_CT"] <- "pre"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="rev_CT"] <- "rev"
+levels(longdat.winstay$volat)[levels(longdat.winstay$volat)=="post_CT"] <- "post"
 
 longdat.winstay <- longdat.winstay %>% arrange(id)
 
@@ -523,7 +563,7 @@ longdat.AD.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'AD')
 
 longdat.RT <- melt(dat_all,
 # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id", "group","order"),
+    id.vars=c("sub_id", "group","order","age"),
 # The source columns
     measure.vars=c("p_RT_pre_ST","p_RT_rev_ST","p_RT_post_ST","p_RT_pre_CT","p_RT_rev_CT","p_RT_post_CT"),
 # Name of the destination column that will identify the original
@@ -544,9 +584,13 @@ longdat.RT <- longdat.RT %>% arrange(phase)
 longdat.RT$volat1 <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.RT$volat <- gl(6,56,labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 
-levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_ST"] <- "pre_CT"
-levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_ST"] <- "rev_CT"
-levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_ST"] <- "post_CT"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_ST"] <- "pre"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_ST"] <- "rev"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_ST"] <- "post"
+
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_CT"] <- "pre"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_CT"] <- "rev"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_CT"] <- "post"
 
 longdat.RT <- longdat.RT %>% arrange(id)
 
@@ -586,8 +630,11 @@ res.AD.correct <- ezANOVA(longdat.AD.correct, p_correct, id, within = .(volat,co
 res.AD.correct
 
 # now for whole sample
-res.correct <- ezANOVA(longdat.correct, p_correct, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.correct <- ezANOVA(longdat.correct, p_correct, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 res.correct
+
+# and make it look nicer
+anova_out(res.correct)
 
 # make a boxplot to take a look at distribution of p_correct group and phasewise
 # panels show different groups
@@ -608,7 +655,7 @@ ezPlot(
 )
 
 # plot subjectwise trajectories across all volat phases in both conditions
-xyplot(p_correct ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.correct, type='b')
+xyplot(p_correct ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.correct, type='b')
 
 
 ```
@@ -647,7 +694,10 @@ ggplot(longdat.correct, aes(x = volat,y = p_correct, col = cond)) + stat_summary
 
 # now ezANOVA can be filled with dv = p_stay, within-variable = cond, between-variable = group and type 3 sums of squares
 
-res.stay <- ezANOVA(longdat.stay, p_stay, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.stay <- ezANOVA(longdat.stay, p_stay, id, within = .(volat,cond), between = .(group), detailed = TRUE, type = 3)
+
+# and make it look nicer
+anova_out(res.stay)
 
 # make a boxplot to take a look at distribution of p_stay group and phasewise
 # panels show different groups
@@ -681,8 +731,10 @@ xyplot(p_stay ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.stay,
 res.HC.sw <- ezANOVA(longdat.HC.sw, p_switch, id, within = .(volat,cond), detailed = TRUE, type = 3)
 
 # now for whole sample
-res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = group, detailed = TRUE, type =3)
+res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = .(group),between_covariates = .(age), detailed = TRUE, type =3)
 
+# and make it look nicer
+anova_out(res.sw)
 
 # make a boxplot to take a look at distribution of p_switch group and phasewise
 # panels show different groups
@@ -703,7 +755,7 @@ ezPlot(
 )
 
 # plot subjectwise trajectories across all volat phases in both conditions
-xyplot(p_switch ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw, type='b')
+xyplot(p_switch ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw, type='b')
 
 ```
 
@@ -712,7 +764,10 @@ xyplot(p_switch ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw,
 
 # now ezANOVA can be filled with dv = p_lswitch, within-variable = cond, between-variable = group and type 3 sums of squares
 
-res.lswitch <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.lswitch <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
+
+# and make it look nicer
+anova_out(res.lswitch)
 
 # make a boxplot to take a look at distribution of p_lswitch group and phasewise, panels show different groups
 ggplot(longdat.lswitch, aes(x=phase, y=p_lswitch)) + geom_boxplot() + facet_grid(group ~.)
@@ -732,7 +787,7 @@ ezPlot(
 )
 
 # plot subjectwise trajectories across all volat phases in both conditions
-xyplot(p_lswitch ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.lswitch, type='b')
+xyplot(p_lswitch ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.lswitch, type='b')
 
 ```
 
@@ -752,8 +807,11 @@ res.AD.winstay <- ezANOVA(longdat.AD.winstay, p_winstay, id, within = .(volat,co
 res.AD.winstay
 
 # now for the whole sample
-res.winstay <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.winstay <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 res.winstay
+
+# and make it look nicer
+anova_out(res.winstay)
 
 # make a boxplot to take a look at distribution of p_winstay group and phasewise
 # panels show different groups
@@ -774,7 +832,7 @@ ezPlot(
 )
 
 # plot subjectwise trajectories across all volat phases in both conditions
-xyplot(p_winstay ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.winstay, type='b')
+xyplot(p_winstay ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.winstay, type='b')
 
 ```
 ## rmANOVA Model p_winstay
@@ -821,7 +879,10 @@ res.HC.RT <- ezANOVA(longdat.HC.RT, p_RT, id, within = .(volat,cond), detailed =
 res.AD.RT <- ezANOVA(longdat.AD.RT, p_RT, id, within = .(volat,cond), detailed = TRUE, type = 3)
 
 # now for whole sample
-res.RT <- ezANOVA(longdat.RT, p_RT, id, within = .(volat,cond), between = group, detailed = TRUE, type = 3)
+res.RT <- ezANOVA(longdat.RT, p_RT, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
+
+# and make it look nicer
+anova_out(res.RT)
 
 # make a boxplot to take a look at distribution of RT group and phasewise, panels show different group
 ggplot(longdat.RT, aes(x=phase, y=p_RT)) + geom_boxplot() + facet_grid(cols = vars(group))
@@ -839,7 +900,7 @@ ezPlot(
    , split_lab = "Condition"
 )
 
-xyplot(p_RT ~ volat  | sub_id, groups=cond,auto.key = TRUE, data=longdat.RT, type='b')
+xyplot(p_RT ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.RT, type='b')
 
 ```
 ## rmANOVA Model p_RT
@@ -870,27 +931,36 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 
 ```
 
-## Hierarchical Modeling
+## Single Trial Analyses
 ```{r}
 
+# add volat variable with Claudia's script
+source("import_singletrial_data.R")
 
-data_strials$choiceanova <- data_strials$Choice_t
-data_strials$choiceanova[data_strials$Choice_t == 0] <- -1
+# change coding of Choice_t variable so it can be used to calculate w_stay and l_switch
+data_strials$Choice_t[data_strials$Choice_t==0] <- -1
 
-# our version of winstay
-data_strials$winstayanova <- data_strials$choiceanova*data_strials$winstay_t1
-data_strials$winstayanova[data_strials$winstayanova == -1] <- 0
+# create new w_stay and l_switch variables on a single-trial basis
+data_new <- data_strials %>% group_by(sub_idx,Cond) %>% 
+   mutate(stay = c(Choice_t[1:length(Choice_t)-1]==Choice_t[2:length(Choice_t)],NaN),
+          w_stay = stay*Outcome, 
+          switch = c(Choice_t[1:length(Choice_t)-1]!=Choice_t[2:length(Choice_t)],NaN),
+          l_switch = switch*(1-Outcome))
+                                                            
+# use single trial dataset to predict Correct, w_stay, l_switch in a nested model (1) and a simple model (1a)
 
-# our version of loseshift
-data_strials$loseshiftanova <- data_strials$choiceanova*data_strials$loseshift_t1
-data_strials$loseshiftanova[data_strials$loseshiftanova == -1] <- 0
+mod1.w_stay <-glmer(w_stay~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.w_stay <-glmer(w_stay~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial)
 
-# use single trial dataset to predict correct (Choice_t is single-trial equivalent to p_correct)
+mod1.l_switch <-glmer(l_switch~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.l_switch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial)
 
-mod1<-glmer(Choice_t~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
+mod1.correct <-glmer(Correct~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+mod1a.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
 
-mod2<-glmer(winstayanova~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
 
-mod3<-glmer(loseshiftanova~Group*Cond*volat+(1|sub_idx), data=data_strials,family=binomial)
+mod2.w_stay <-glmer(w_stay~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
+mod2.l_switch <-glmer(l_switch~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial,nAGQ = 0)
+mod2.correct <-glmer(Correct~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
 
 ```
