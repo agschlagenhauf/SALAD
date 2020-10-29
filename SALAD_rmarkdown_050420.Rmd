@@ -655,7 +655,22 @@ anova_out(res.HC.correct)
 ggplot(longdat.correct, aes(x=phase, y=p_correct)) + geom_boxplot() + facet_grid(cols = vars(group))
 
 # plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
-ezPlot(
+fig1.bycond.pcorrect <- ezPlot(
+   data = longdat.correct
+   , dv = .(p_correct)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(group)
+   , col = .(cond)
+   , y_lab = "p_correct"
+   , split_lab = "Group"
+)
+
+ggsave(fig1.bycond.pcorrect, filename = "perc_pcorrect_cond.png")
+
+fig1.bygroup.pcorrect <- ezPlot(
    data = longdat.correct
    , dv = .(p_correct)
    , wid = .(id)
@@ -667,6 +682,9 @@ ezPlot(
    , y_lab = "p_correct"
    , split_lab = "Condition"
 )
+
+
+ggsave(fig1.bygroup.pcorrect, filename = "perc_pcorrect_group.png")
 
 # plot subjectwise trajectories across all volat phases in both conditions
 xyplot(p_correct ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.correct, type='b')
@@ -798,18 +816,21 @@ anova_out(res.lswitch.wcov)
 ggplot(longdat.lswitch, aes(x=phase, y=p_lswitch)) + geom_boxplot() + facet_grid(group ~.)
 
 # plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
-ezPlot(
+fig3.bycond.plswitch <- ezPlot(
    data = longdat.lswitch
    , dv = .(p_lswitch)
    , wid = .(id)
    , within = .(volat,cond)
    , between = .(group)
    , x = .(volat)
-   , split = .(cond)
-   , col = .(group)
+   , split = .(group)
+   , col = .(cond)
    , y_lab = "p_lswitch"
-   , split_lab = "Condition"
+   , split_lab = "Group"
 )
+
+ggsave(fig3.bycond.plswitch, filename = "perc_lswitch_cond.png")
+
 
 ave(longdat.HC.lswitch$p_lswitch,longdat.HC.correct$cond, FUN=sd)
 tapply(longdat.HC.lswitch$p_lswitch, longdat.HC.correct$cond, sd)
@@ -848,7 +869,7 @@ res.winstay.wcov <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,con
 
 
 # and make it look nicer
-anova_out(res.HC.winstay)
+anova_out(res.winstay)
 anova_out(res.winstay.wcov)
 
 # make a boxplot to take a look at distribution of p_winstay group and phasewise
@@ -856,7 +877,22 @@ anova_out(res.winstay.wcov)
 ggplot(longdat.sw, aes(x=phase, y=p_switch)) + geom_boxplot() + facet_grid(cols = vars(group))
 
 # plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
-ezPlot(
+fig1.bycond.pwinstay <- ezPlot(
+   data = longdat.winstay
+   , dv = .(p_winstay)
+   , wid = .(id)
+   , within = .(volat,cond)
+   , between = .(group)
+   , x = .(volat)
+   , split = .(group)
+   , col = .(cond)
+   , y_lab = "p_winstay"
+   , split_lab = "Group"
+)
+
+ggsave(fig1.bycond.pwinstay, filename = "perc_wstay_cond.png")
+
+fig1.bygroup.pwinstay <- ezPlot(
    data = longdat.winstay
    , dv = .(p_winstay)
    , wid = .(id)
@@ -868,6 +904,8 @@ ezPlot(
    , y_lab = "p_winstay"
    , split_lab = "Condition"
 )
+
+ggsave(fig1.bygroup.pwinstay, filename = "perc_wstay_group.png")
 
 # plot subjectwise trajectories across all volat phases in both conditions
 xyplot(p_winstay ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.winstay, type='b')
@@ -1176,17 +1214,52 @@ contrasts(data_new_HC$Group) <- c(0.5,-0.5)
 contrasts(data_new_HC$Cond) <- c(0.5,-0.5)
 contrasts(data_new_HC$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
 
-# subject as random intercept model
-mod1a.HC.correct <- glmer(Correct~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial, nAGQ = 0)
-
-mod1a.HC.w_stay <- glmer(w_stay~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial, nAGQ = 0)
-
-mod1a.HC.l_switch <- glmer(w_stay~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial, nAGQ = 0)
-
 # hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
 # H0.1: 0 = X1 - X2
 # H0.2: 0 = X1 - X3
 
+###################################################################################################################
+############################ building models consecutively  #######################################################
+
+# use single trial dataset (data_new_HC) to predict Correct
+
+# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
+# - in a model with Correct predicted by random subject intercept + all main effects (1)
+# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+mod1.HC.correct <- glmer(Correct~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+mod2.HC.correct <- glmer(Correct~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial, nAGQ = 0)
+
+# model comparison of models predicting Correct
+anova(mod0.HC.correct, mod0a.HC.correct, mod1.HC.correct,mod2.HC.correct)
+
+# use single trial dataset (data_new_HC) to predict w_stay
+
+# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
+# - in a model with w_stay predicted by random subject intercept + all main effects (1)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.HC.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+mod1.HC.wstay <- glmer(w_stay~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+mod2.HC.wstay <- glmer(w_stay~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+
+# model comparison of w_stay models
+anova(mod0.HC.wstay,mod0a.HC.wstay,mod1.HC.wstay,mod2.HC.wstay)
+
+# use single trial dataset (data_new_HC) to predict l_switch
+
+# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
+# - in a model with l_switch predicted by random subject intercept + all main effects (1)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+
+mod0.HC.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
+mod1.HC.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial, nAGQ = 0)
+mod2.HC.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial, nAGQ = 0)
+
+# model comparison of lswitch models
+anova(mod0.HC.lswitch,mod0a.HC.lswitch,mod1.HC.lswitch,mod2.HC.lswitch)
 
 
 ``` 
@@ -1213,11 +1286,11 @@ theme_set(theme_bw())
 # - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
 # - in a model with Correct predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
 
-mod0.correct <- glmer(Correct~(1|sub_idx), data=data_new, family=binomial, nAGQ = 0)
-mod0a.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
-mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod2.correct <- glmer(Correct~Group*Cond+Group*volat+Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod3.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
+mod0.correct <- glmer(Correct~(1|sub_idx), data=data_new, family=binomial)
+mod0a.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
+mod2.correct <- glmer(Correct~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
+mod3.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
 
 # model comparison of Correct models
 anova(mod0.correct, mod0a.correct, mod1.correct,mod2.correct,mod3.correct)
@@ -1230,11 +1303,11 @@ anova(mod0.correct, mod0a.correct, mod1.correct,mod2.correct,mod3.correct)
 # - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
 # - in a model with w_stay predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
 
-mod0.wstay <- glmer(w_stay~(1|sub_idx), data=data_new, family=binomial, nAGQ = 0)
-mod0a.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
-mod1.wstay <- glmer(w_stay~Group+Cond+volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod2.wstay <- glmer(w_stay~Group*Cond+Group*volat+Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod3.wstay <- glmer(w_stay~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
+mod0.wstay <- glmer(w_stay~(1|sub_idx), data=data_new, family=binomial)
+mod0a.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.wstay <- glmer(w_stay~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod2.wstay <- glmer(w_stay~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod3.wstay <- glmer(w_stay~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 
 # model comparison of w_stay models
 anova(mod0.wstay,mod0a.wstay,mod1.wstay,mod2.wstay,mod3.wstay)
@@ -1246,16 +1319,14 @@ anova(mod0.wstay,mod0a.wstay,mod1.wstay,mod2.wstay,mod3.wstay)
 # - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
 # - in a model with l_switch predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
 
-mod0.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new, family=binomial, nAGQ = 0)
-#mod0a.lswitch <- glmer(l_switch~(1|sub_idx)+age, data=data_new,family=binomial, nAGQ = 0)
-mod0b.lswitch <- glmer(l_switch~(1|sub_idx)+IQ_WST, data=data_new,family=binomial, nAGQ = 0)
-mod0c.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
-mod1.lswitch <- glmer(l_switch~Group+Cond+volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod2.lswitch <- glmer(l_switch~Group*Cond+Group*volat+Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
-mod3.lswitch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
+mod0.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new, family=binomial)
+mod0a.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.lswitch <- glmer(l_switch~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod2.lswitch <- glmer(l_switch~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
+mod3.lswitch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
 
 # model comparison of lswitch models
-anova(mod0.lswitch,mod0b.lswitch,mod0c.lswitch,mod1.lswitch,mod2.lswitch,mod3.lswitch)
+anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch,mod3.lswitch)
 
 ######## more complex models with random + nested effects which did not all converge ##############################
 
@@ -1277,30 +1348,28 @@ anova(mod0.lswitch,mod0b.lswitch,mod0c.lswitch,mod1.lswitch,mod2.lswitch,mod3.ls
 ## Post Hoc Tests
 ```{r}
 # do post-hoc tests on simple models mod1a
-# type = response leads to results being presented in original scale
 
-emms.correct <- emmeans(mod1d.correct, list(pairwise ~ Group), adjust = "tukey",type = "response")
-correct.emm <- emmeans(modtwo.correct,~ volat * Cond * Group)
+emmip(mod2.correct, Cond ~ volat)
+emmip(mod2.correct, volat ~ Group | Cond)
 
-# Group Cond    emmean     SE df lower.CL upper.CL
-# HC    control  0.731 0.0174 54    0.696    0.765
-# AUD   control  0.687 0.0181 54    0.650    0.723
-# HC    stress   0.751 0.0174 54    0.717    0.786
-# AUD   stress   0.688 0.0181 54    0.652    0.724
+emmip(mod3.wstay, volat ~ Cond | Group)
+emmip(mod2.wstay, volat ~ Group | Cond)
 
-contrast(correct.emm,"consec", simple ="each", combine = TRUE, adjust = "mvt")
+emmip(mod3.lswitch, volat ~ Cond | Group)
+emmip(mod2.lswitch, volat ~ Group | Cond)
 
-# Cond    Group contrast         estimate      SE    df t.ratio p.value
-# control .     AUD - HC         -0.04395 0.02506    54 -1.754  0.2528 
-# stress  .     AUD - HC         -0.06323 0.02506    54 -2.523  0.0494 
-# .       HC    stress - control  0.02091 0.00907 17860  2.304  0.0717 
-# .       AUD   stress - control  0.00162 0.00940 17860  0.172  0.9977 
+correct.emm <- emmeans(mod2.correct,pairwise ~ Group | c(Cond,volat))
 
-#Results are averaged over some or all of the levels of: volat 
-#Degrees-of-freedom method: containment 
-#P value adjustment: mvt method for 4 tests 
+# do post-hoc tests on HC models
+correct.emm <- emmeans(mod2.correct,~ volat | Cond)
+winstay.emm <- emmeans(mod2.wstay,pairwise ~ volat | Cond)
+loseswitch.emm <- emmeans(mod2.lswitch,pairwise ~ volat | Cond)
 
-# compare levels of volat within each level of stress condition
-emms.winstay <- emmeans(mod1a.w_stay, list(pairwise ~ volat|Cond), adjust = "tukey",type = "response")
+# test all contrasts
+contrast(correct.emm,"consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+contrast(loseswitch.emm,"consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+contrast(winstay.emm, "consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+
+contrast(correct.emm,"consec", simple ="Group", combine = TRUE, adjust = "mvt",weights = "cells")
 
 ```
