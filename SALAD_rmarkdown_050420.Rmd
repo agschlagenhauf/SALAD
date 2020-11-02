@@ -50,6 +50,7 @@ if (!require(stringr)) install.packages('hypr')
 if (!require(stringr)) install.packages('schoRsch')
 if (!require(stringr)) install.packages('emmeans')
 if (!require(stringr)) install.packages('psycho')
+if (!require(stringr)) install.packages('gghalves')
 
 
 library("ggplot2")
@@ -73,6 +74,7 @@ library("hypr")
 library('schoRsch')
 library('emmeans')
 library('psycho')
+library('gghalves')
 
 ```
 
@@ -114,8 +116,8 @@ dat.nooutlier <- dat %>% filter(p_correct_T1 > .55) %>% filter(p_correct_T2 > .5
 dat.order.A <- subset(dat_complete, order == "1")
 dat.order.B <- subset(dat_complete, order == "2")
 # subset data for order (A=CT-ST,B=ST-CT)
-dat.HC <- subset(dat, group == "1")
-dat.AD <- subset(dat, group == "2")
+dat.HC <- subset(dat_complete, group == "1")
+dat.AD <- subset(dat_complete, group == "2")
 
 # the following is just playing around:
 # arrange by age in descending order
@@ -492,6 +494,7 @@ longdat.lswitch$p_lswitch <- as.numeric(longdat.lswitch$p_lswitch)
 
 longdat.lswitch$volat1 <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
 longdat.lswitch$volat <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.lswitch$volat2 <- as.numeric(longdat.lswitch$volat1)
 
 levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="pre_ST"] <- "pre"
 levels(longdat.lswitch$volat)[levels(longdat.lswitch$volat)=="rev_ST"] <- "rev"
@@ -1063,39 +1066,201 @@ f2
 # the same but with jitter before
 
 longdat.correct$jvolat2 <- jitter(longdat.correct$volat2, amount=.09)
-longdat.winstay$jvolat2 <- jitter(longdat.winstay$volat2, amount=.09)
+longdat.HC.correct$jvolat2 <- jitter(longdat.HC.correct$volat2, amount=.09)
+longdat.AD.correct$jvolat2 <- jitter(longdat.AD.correct$volat2, amount=.09)
 
-f3 <- ggplot(data=longdat.correct, aes(y=p_correct)) +
+longdat.winstay$jvolat2 <- jitter(longdat.winstay$volat2, amount=.09)
+longdat.lswitch$jvolat2 <- jitter(longdat.lswitch$volat2, amount=.09)
+longdat.HC.winstay$jvolat2 <- jitter(longdat.HC.winstay$volat2, amount=.09)
+
+# here only HC are plotted across phases and conditions
+
+f3_pcorrect_HC <- ggplot(data=longdat.HC.correct, aes(y=p_correct)) +
   
    #Add geom_() objects
-   geom_point(aes(x=jvolat2), color = "magenta", size = 1.5) +
-   geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray') +
-   
+   geom_point(data = longdat.HC.correct %>% filter(cond2=="1"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+              alpha = .6) +
+      geom_point(data = longdat.HC.correct %>% filter(cond2=="0"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5,
+              alpha = .6) +
+
+   geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray', alpha = .3) +
+    
+        geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="post_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+      
+     geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.HC.correct %>% filter(volat1=="post_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
    #Define additional settings
-   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(0, 6)) +
-   xlab("Condition") + ylab("Value") +
-   ggtitle('Figure 3: Repeated measures with jitter and connections') +
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Stress_pre", "Stress_rev", "Stress_post","Control_pre","Control_rev","Control_post",), limits=c(0, 8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Correct responses only decreased in reversal phase', 
+           subtitle = 'HC condition by phase',
+           caption = 'Datapoints are jittered') + 
+   theme(plot.title = element_text(face = "italic"))
    theme_classic()
 
-f3
+f3_pcorrect_HC
 
-# the same but with different colors
+f3_pcorrect_AD <- ggplot(data=longdat.AD.correct, aes(y=p_correct)) +
+  
+   #Add geom_() objects
+   geom_point(data = longdat.AD.correct %>% filter(cond2=="1"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+              alpha = .6) +
+      geom_point(data = longdat.AD.correct %>% filter(cond2=="0"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5,
+              alpha = .6) +
+
+   geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray', alpha = .3) +
+    
+        geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="post_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+      
+     geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.AD.correct %>% filter(volat1=="post_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+   #Define additional settings
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Stress_pre", "Stress_rev", "Stress_post","Control_pre","Control_rev","Control_post",), limits=c(0, 8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Correct responses only decreased in reversal phase across', 
+           subtitle = 'HC condition by phase',
+           caption = 'Datapoints are jittered') + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+
+f3_pcorrect_AD
+
+f3_pwinstay_HC <- ggplot(data=longdat.HC.winstay, aes(y=p_winstay)) +
+  
+   #Add geom_() objects
+   geom_point(data = longdat.HC.winstay %>% filter(cond2=="1"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5, 
+              alpha = .6) +
+      geom_point(data = longdat.HC.winstay %>% filter(cond2=="0"), aes(x=jvolat2), color = 'darkorange', size = 1.5,
+              alpha = .6) +
+
+   geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray', alpha = .3) +
+    
+        geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+      geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="post_ST"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+      
+     geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.HC.winstay %>% filter(volat1=="post_CT"), aes(x=jvolat2, y=p_winstay), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') 
+# 
+#    #Define additional settings
+#    scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Stress_pre", "Stress_rev", "Stress_post","Control_pre","Control_rev","Control_post",), limits=c(0, 7)) +
+#    xlab("Condition") + ylab("Percentage of winstay behavior") +
+#    labs(title = 'Correct responses only decreased in reversal phase', 
+#            subtitle = 'HC condition by phase',
+#            caption = 'Datapoints are jittered') + 
+#    theme(plot.title = element_text(face = "italic"))
+#    theme_classic()
+
+f3_pwinstay_HC
+
+# the same but with different meanings for colors, now blue is HC and orange is AD
 
 f4 <- ggplot(data=longdat.correct, aes(y=p_correct)) +
   
    #Add geom_() objects
-   geom_point(data = longdat.correct %>% filter(cond2=="1"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5,
+   geom_point(data = longdat.correct %>% filter(group=="AD"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
               alpha = .6) +
-   geom_point(data = longdat.correct %>% filter(cond2=="0"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+      geom_point(data = longdat.correct %>% filter(group == "HC"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5,
               alpha = .6) +
+
    geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray', alpha = .3) +
+ 
+     geom_half_boxplot(
+     data = longdat.correct %>% filter(group=="HC") %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_correct),  position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+
+      geom_half_boxplot(
+     data = longdat.correct %>% filter(group=="AD") %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -.5),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+   
+      geom_half_boxplot(
+     data = longdat.correct %>% filter(group=="HC") %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_correct) , position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
    
    #Define additional settings
-   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(0, 6)) +
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Stress_pre", "Stress_rev", "Stress_post","Control_pre","Control_rev","Control_post"), limits=c(0,6 )) +
    xlab("Condition") + ylab("Percentage of correct responses") +
    labs(title = 'Correct responses decreased in reversal phase', 
-           subtitle = 'Control vs. stress condition by phase',
-           caption = 'Datapoints are not jittered') + 
+           subtitle = 'HC vs. AD condition by phase',
+           caption = 'Datapoints are jittered') + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
 
@@ -1103,41 +1268,175 @@ f4
 
 # add box and violin plots
 
-f5 <- ggplot(data = longdat.correct, aes(y = p_correct)) +
+f5_pcorrect <- ggplot(data = longdat.correct, aes(y = p_correct)) +
   
    #Add geom_() objects
-   geom_point(data = longdat.correct %>% filter(cond2 =="0"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5, 
+   geom_point(data = longdat.correct %>% filter(cond2=="1"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5, 
               alpha = .6) +
-   geom_point(data = longdat.correct %>% filter(cond2 =="1"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+   geom_point(data = longdat.correct %>% filter(cond2=="0"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
               alpha = .6) +
    geom_line(aes(x = jvolat2, group = sub_id), color = 'lightgray', alpha = .3) +
   
    geom_half_boxplot(
-     data = longdat.correct %>% filter(cond2=="0"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = -3), 
+     data = longdat.correct %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.4), 
      side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
      fill = 'dodgerblue') +
    
    geom_half_boxplot(
-     data = longdat.correct %>% filter(cond2=="1"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 2), 
+     data = longdat.correct %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.5), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.correct %>% filter(volat1=="post_CT"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.6), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.correct %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.17), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+   
+   geom_half_boxplot(
+     data = longdat.correct %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.2), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+   geom_half_boxplot(
+     data = longdat.correct %>% filter(volat1=="post_ST"), aes(x=jvolat2, y = p_correct), position = position_nudge(x = 0.3), 
      side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
      fill = 'darkorange') +
   
-   geom_half_violin(
-     data = longdat.correct %>% filter(cond2=="0"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = -4), 
-     side = "l", fill = 'dodgerblue') +
- 
-   geom_half_violin(
-     data = longdat.correct %>% filter(cond2=="1"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = 4), 
-     side = "r", fill = "darkorange") +
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="0"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = -4), 
+   #   side = "l", fill = 'dodgerblue') +
+   # 
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="1"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = 4), 
+   #   side = "r", fill = "darkorange") +
   
   
    #Define additional settings
-   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(-3, 10)) +
-   ggtitle('Figure 5: Repeated measures with box- and violin plots') +
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(0, 7)) + xlab("Condition/Phase") +
+   ggtitle('Figure 5: Decrease in reversal phase maintained in both conditions') +
    scale_y_continuous(limits=c(0,1.2))
    theme_classic() 
    
-f5
+f5_pcorrect
+
+
+f5_pwinstay <- ggplot(data = longdat.winstay, aes(y = p_winstay)) +
+  
+   #Add geom_() objects
+   geom_point(data = longdat.winstay %>% filter(cond2=="1"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5, 
+              alpha = .6) +
+   geom_point(data = longdat.winstay %>% filter(cond2=="0"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+              alpha = .6) +
+   geom_line(aes(x = jvolat2, group = sub_id), color = 'lightgray', alpha = .3) +
+  
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.4), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.5), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="post_CT"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.6), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.17), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+   
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.2), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+   geom_half_boxplot(
+     data = longdat.winstay %>% filter(volat1=="post_ST"), aes(x=jvolat2, y = p_winstay), position = position_nudge(x = 0.3), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+  
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="0"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = -4), 
+   #   side = "l", fill = 'dodgerblue') +
+   # 
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="1"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = 4), 
+   #   side = "r", fill = "darkorange") +
+  
+  
+   #Define additional settings
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(0, 7)) + xlab("Condition/Phase") +
+   ggtitle('Figure 5: Winstay behavior generally high') +
+   scale_y_continuous(limits=c(0,1.2))
+   theme_classic() 
+   
+f5_pwinstay
+
+f5_plswitch <- ggplot(data = longdat.lswitch, aes(y = p_lswitch)) +
+  
+   #Add geom_() objects
+   geom_point(data = longdat.lswitch %>% filter(cond2=="1"), aes(x=jvolat2), color = 'dodgerblue', size = 1.5, 
+              alpha = .6) +
+   geom_point(data = longdat.lswitch %>% filter(cond2=="0"), aes(x=jvolat2), color = 'darkorange', size = 1.5, 
+              alpha = .6) +
+   geom_line(aes(x = jvolat2, group = sub_id), color = 'lightgray', alpha = .3) +
+  
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.4), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.5), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="post_CT"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.6), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'dodgerblue') +
+   
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.17), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+   
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.2), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+
+   geom_half_boxplot(
+     data = longdat.lswitch %>% filter(volat1=="post_ST"), aes(x=jvolat2, y = p_lswitch), position = position_nudge(x = 0.3), 
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = 'darkorange') +
+  
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="0"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = -4), 
+   #   side = "l", fill = 'dodgerblue') +
+   # 
+   # geom_half_violin(
+   #   data = longdat.correct %>% filter(cond2=="1"),aes(x = jvolat2, y = p_correct), position = position_nudge(x = 4), 
+   #   side = "r", fill = "darkorange") +
+  
+  
+   #Define additional settings
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Control_pre","Control_rev","Control_post","Stress_pre", "Stress_rev", "Stress_post"), limits=c(0, 7)) + xlab("Condition/Phase") +
+   ggtitle('Figure 5: Loseswitch behavior ') +
+   scale_y_continuous(limits=c(0,1.2))
+   theme_classic() 
+   
+f5_plswitch
+
 
 # now the previous one for winstay
 
@@ -1255,11 +1554,70 @@ anova(mod0.HC.wstay,mod0a.HC.wstay,mod1.HC.wstay,mod2.HC.wstay)
 
 mod0.HC.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
-mod1.HC.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial, nAGQ = 0)
+mod1.HC.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial)
 mod2.HC.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_HC,family=binomial, nAGQ = 0)
 
 # model comparison of lswitch models
 anova(mod0.HC.lswitch,mod0a.HC.lswitch,mod1.HC.lswitch,mod2.HC.lswitch)
+
+
+``` 
+
+```{r}
+
+# filter single trial dataset by healthy controls
+data_new_AUD <- data_new %>% filter(Group == "AUD")
+
+contrasts(data_new_AUD$Group) <- c(0.5,-0.5)
+contrasts(data_new_AUD$Cond) <- c(0.5,-0.5)
+contrasts(data_new_AUD$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
+
+# hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
+# H0.1: 0 = X1 - X2
+# H0.2: 0 = X1 - X3
+
+###################################################################################################################
+############################ building models consecutively  #######################################################
+
+# use single trial dataset (data_new_AUD) to predict Correct
+
+# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
+# - in a model with Correct predicted by random subject intercept + all main effects (1)
+# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.AUD.correct <- glmer(Correct~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.correct <- glmer(Correct~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial, nAGQ = 0)
+mod2.AUD.correct <- glmer(Correct~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial, nAGQ = 0)
+
+# model comparison of models predicting Correct
+anova(mod0.AUD.correct, mod0a.AUD.correct, mod1.AUD.correct,mod2.AUD.correct)
+
+# use single trial dataset (data_new_AUD) to predict w_stay
+
+# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
+# - in a model with w_stay predicted by random subject intercept + all main effects (1)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.AUD.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.wstay <- glmer(w_stay~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod2.AUD.wstay <- glmer(w_stay~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial, nAGQ = 0)
+
+# model comparison of w_stay models
+anova(mod0.AUD.wstay,mod0a.AUD.wstay,mod1.AUD.wstay,mod2.AUD.wstay)
+
+# use single trial dataset (data_new_AUD) to predict l_switch
+
+# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
+# - in a model with l_switch predicted by random subject intercept + all main effects (1)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+
+mod0.AUD.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod2.AUD.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+
+# model comparison of lswitch models
+anova(mod0.AUD.lswitch,mod0a.AUD.lswitch,mod1.AUD.lswitch,mod2.AUD.lswitch)
 
 
 ``` 
@@ -1288,8 +1646,8 @@ theme_set(theme_bw())
 
 mod0.correct <- glmer(Correct~(1|sub_idx), data=data_new, family=binomial)
 mod0a.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
-mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
-mod2.correct <- glmer(Correct~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
+mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx)+school_yrs, data=data_new,family=binomial)
+mod2.correct <- glmer(Correct~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs, data=data_new,family=binomial, nAGQ = 0)
 mod3.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial, nAGQ = 0)
 
 # model comparison of Correct models
@@ -1350,15 +1708,16 @@ anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch,mod3.lswitch)
 # do post-hoc tests on simple models mod1a
 
 emmip(mod2.correct, Cond ~ volat)
-emmip(mod2.correct, volat ~ Group | Cond)
 
-emmip(mod3.wstay, volat ~ Cond | Group)
-emmip(mod2.wstay, volat ~ Group | Cond)
+emmip(mod3.correct, volat ~ Group | c(Cond,volat))
 
-emmip(mod3.lswitch, volat ~ Cond | Group)
-emmip(mod2.lswitch, volat ~ Group | Cond)
+emmip(mod3.correct, volat ~ Group | Cond)
+emmip(mod3.correct, volat ~ Cond | Group)
 
-correct.emm <- emmeans(mod2.correct,pairwise ~ Group | c(Cond,volat))
+emmip(mod3.wstay, volat ~ Group | Cond)
+emmip(mod3.lswitch, volat ~ Group | Cond)
+
+correct.emm <- emmeans(mod3.correct,pairwise ~ Group | c(Cond,volat))
 
 # do post-hoc tests on HC models
 correct.emm <- emmeans(mod2.correct,~ volat | Cond)
