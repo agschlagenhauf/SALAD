@@ -46,6 +46,8 @@ library("scales")
 
 ```
 
+
+## Remove outliers - find out which subjects performed < 55% p_correct
 ```{r}
 
 # adapt path and data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's
@@ -73,8 +75,8 @@ is_outlier <- function(x) {
 # now print outlier labels (in this case the row number)
 my_data$outlier <- my_data$outlier <- my_data$p_correct_T1 < .55
 
-my_data <- my_data %>% 
-my_data$group <- group_level
+my_data <- my_data %>% mutate(group_level = factor(group, labels = c("HC", "AD")))
+my_data$group <- as.factor(my_data$group_level)
 
 my_data$p_correct_T1 <- as.numeric(my_data$p_correct_T1)
 my_data$p_correct_T2 <- as.numeric(my_data$p_correct_T2)
@@ -87,15 +89,6 @@ p.2 <- ggplot(my_data, aes(group,p_correct_T2)) +
   geom_boxplot() +
   geom_text(aes(label = sub_id), size = 3, na.rm = TRUE, hjust = -0.3)
 
-# code from R Course
-library(ggforce)
-my_data %>%
-  mutate(row_number = seq(1:nrow(my_data))) %>%
-  mutate(outlier = ifelse(is_outlier(PFratio), row_number, as.numeric(NA))) %>%
-  ggplot(., aes(x = INHdivlev, y = PFratio)) +
-  geom_boxplot() +
-  geom_sina(aes(x = INHdivlev, y = PFratio), method = "counts", scale = F) +
-  geom_text(aes(label = outlier), size = 2, nudge_x = 0.15, na.rm = TRUE, hjust = -0.3)
 
 ```
 
