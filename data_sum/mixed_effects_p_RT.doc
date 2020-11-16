@@ -1,0 +1,24 @@
+                                                                                                                                                                                      call  
+ lme.formula(fixed = p_RT ~ 1, data = longdat.RT, random = ~1 |     id/volat/cond2, method = "ML")                                                                                      :1  
+ lme.formula(fixed = p_RT ~ group + volat + cond2 + group:volat +     group:cond2 + volat:cond2 + group:volat:cond2, data = longdat.RT,     random = ~1 | id/volat/cond2, method = "ML"):1  
+ lme.formula(fixed = p_RT ~ group + volat + cond2 + group:volat +     group:cond2 + volat:cond2, data = longdat.RT, random = ~1 |     id/volat/cond2, method = "ML")                    :1  
+ lme.formula(fixed = p_RT ~ group + volat + cond2 + group:volat +     group:cond2, data = longdat.RT, random = ~1 | id/volat/cond2,     method = "ML")                                  :1  
+ lme.formula(fixed = p_RT ~ group + volat + cond2 + group:volat,     data = longdat.RT, random = ~1 | id/volat/cond2, method = "ML")                                                    :1  
+ lme.formula(fixed = p_RT ~ group + volat + cond2, data = longdat.RT,     random = ~1 | id/volat/cond2, method = "ML")                                                                  :1  
+ (Other)                                                                                                                                                                                :3  
+     Model         df              AIC              BIC             logLik           Test  
+ Min.   :1   Min.   : 5.000   Min.   :-743.0   Min.   :-724.0   Min.   :376.5          :1  
+ 1st Qu.:3   1st Qu.: 7.000   1st Qu.:-741.1   1st Qu.:-714.9   1st Qu.:377.8   1 vs 2 :1  
+ Median :5   Median : 9.000   Median :-737.7   Median :-703.3   Median :377.9   2 vs 3 :1  
+ Mean   :5   Mean   : 9.778   Mean   :-736.9   Mean   :-699.6   Mean   :378.2   3 vs 4 :1  
+ 3rd Qu.:7   3rd Qu.:12.000   3rd Qu.:-732.5   3rd Qu.:-686.7   3rd Qu.:378.2   4 vs 5 :1  
+ Max.   :9   Max.   :16.000   Max.   :-729.8   Max.   :-668.7   Max.   :380.9   5 vs 6 :1  
+                                                                                (Other):3  
+    L.Ratio           p-value      
+ Min.   :0.00014   Min.   :0.1102  
+ 1st Qu.:0.55348   1st Qu.:0.2414  
+ Median :2.01387   Median :0.3750  
+ Mean   :1.72667   Mean   :0.4730  
+ 3rd Qu.:2.60371   3rd Qu.:0.7269  
+ Max.   :3.80333   Max.   :0.9906  
+ NA's   :1         NA's   :1       
