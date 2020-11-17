@@ -30,28 +30,33 @@ knitr::opts_chunk$set(fig.width=15, fig.height=8, fig.path='Figs/')
 rm(list = ls()) 
 
 if (!require(ggplot2)) install.packages("ggplot2")
-if (!require(ggplot2)) install.packages("readxl")
+if (!require(readxl)) install.packages("readxl")
 if (!require(tidyverse)) install.packages("tidyverse")
 if (!require(psych)) install.packages("psych")
 if (!require(reshape2)) install.packages("reshape2")
 if (!require(car)) install.packages("car")
-if (!require(car)) install.packages("lme4")
+if (!require(lme4)) install.packages("lme4")
 if (!require(ez)) install.packages("ez")
-if (!require(ez)) install.packages("broom")
+if (!require(broom)) install.packages("broom")
 if (!require(strex)) install.packages("strex")
 if (!require(nlme)) install.packages("nlme")
 if (!require(lattice)) install.packages("lattice")
 if (!require(tinytex)) install.packages('tinytex')
-if (!require(tinytex)) install.packages('purrr')
+if (!require(purrr)) install.packages('purrr')
 if (!require(knitr)) install.packages("knitr")
 if (!require(kableExtra)) install.packages('kableExtra')
 if (!require(stringr)) install.packages('stringr')
-if (!require(stringr)) install.packages('hypr')
-if (!require(stringr)) install.packages('schoRsch')
-if (!require('hrbrthemes')) install.packages('hrbrthemes')
-if (!require(stringr)) install.packages('emmeans')
-if (!require(stringr)) install.packages('psycho')
-if (!require(stringr)) install.packages('gghalves')
+if (!require(hypr)) install.packages('hypr')
+if (!require(schoRsch)) install.packages('schoRsch')
+if (!require(hrbrthemes)) install.packages('hrbrthemes')
+if (!require(emmeans)) install.packages('emmeans')
+if (!require(psycho)) install.packages('psycho')
+if (!require(gghalves)) install.packages('gghalves')
+if (!require(sjPlot)) install.packages('sjPlot')
+if (!require(sjmisc)) install.packages('sjmisc')
+if (!require(effects)) install.packages('effects')
+if (!require(sjstats)) install.packages('sjstats')
+if (!require(cowplot)) install.packages('cowplot')
 
 library("ggplot2")
 library("readxl")
@@ -76,6 +81,11 @@ library('hrbrthemes')
 library('emmeans')
 library('psycho')
 library('gghalves')
+library('sjPlot') #for plotting lmer and glmer mods
+library('sjmisc') 
+library('effects')
+library('sjstats') #use for r2 functions
+library('cowplot')
 
 ```
 
@@ -111,20 +121,13 @@ dat.nooutlier <- dat %>% filter(p_correct_T1 > .55) %>% filter(p_correct_T2 > .5
 ```
 
 ```{r}
-
+# plot underlying task structure for BCCN poster
 
 state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
 
-state_rev_3 <- replace(state_rev, state_rev==2, 0)
+state_rev_2 <- replace(state_rev, state_rev==2, 0)
 
-dd <- data.frame(state_rev_3,)
-
-plot(state_rev_3,type = "o", col = "white", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
-
-ggplot(dd, aes(y=state_rev_3, )) +
-  geom_line( color="#69b3a2", size=2, alpha=0.9, linetype=2) +
-  theme_ipsum() +
-  ggtitle("Evolution of something")
+plot(state_rev_2,type = "o", col = "black", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
 
 
 ```
@@ -656,7 +659,7 @@ Within subject measure: volat/phase (pre/rev/post) of Reversal Learning Task
 # now ezANOVA can be filled with dv = p_correct, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
 
 # first for HC only: 
-res.HC.correct <- ezANOVA(longdat.HC.correct, p_correct, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.HC.correct <- ezANOVA(longdat.HC.correct, p_correct, id, within = .(volat,cond), between_covariates = .(school_yrs,age), detailed = TRUE, type = 3)
 res.HC.correct
 
 # then for AD only: 
@@ -828,12 +831,12 @@ xyplot(p_switch ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw
 
 res.lswitch <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = .(group), detailed = TRUE, type = 3)
 
-res.HC.lswitch <- ezANOVA(longdat.HC.lswitch, p_lswitch, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.HC.lswitch <- ezANOVA(longdat.HC.lswitch, p_lswitch, id, within = .(volat,cond),between_covariates = .(school_yrs,age), detailed = TRUE, type = 3)
 
 res.lswitch.wcov <- ezANOVA(longdat.lswitch, p_lswitch, id, within = .(volat,cond), between = .(group), between_covariates = .(school_yrs,age), detailed = TRUE, type = 3)
 
 # and make it look nicer
-anova_out(res.lswitch.wcov)
+anova_out(res.HC.lswitch)
 
 # make a boxplot to take a look at distribution of p_lswitch group and phasewise, panels show different groups
 ggplot(longdat.lswitch, aes(x=phase, y=p_lswitch)) + geom_boxplot() + facet_grid(group ~.)
@@ -878,7 +881,7 @@ ggsave(figure3, filename = "perc_lswitch_HC.png")
 # now ezANOVA can be filled with dv = p_correct, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
 
 # first for HC only: only main effect for volat, a non-significant interaction for volat*cond
-res.HC.winstay <- ezANOVA(longdat.HC.winstay, p_winstay, id, within = .(volat,cond), detailed = TRUE, type = 3)
+res.HC.winstay <- ezANOVA(longdat.HC.winstay, p_winstay, id, within = .(volat,cond),between_covariates = .(school_yrs,age), detailed = TRUE, type = 3)
 res.HC.winstay
 
 # then for AD only: a non-significant main effect for volat and interaction for volat*cond
@@ -892,7 +895,7 @@ res.winstay.wcov <- ezANOVA(longdat.winstay, p_winstay, id, within = .(volat,con
 
 
 # and make it look nicer
-anova_out(res.winstay)
+anova_out(res.HC.winstay)
 anova_out(res.winstay.wcov)
 
 # make a boxplot to take a look at distribution of p_winstay group and phasewise
@@ -1504,6 +1507,8 @@ f5a
 ## Single Trial Analyses Prep
 ```{r}
 
+## NECESSARY TO RUN THIS FOR EVERYTHING HAPPENING AFTERWARDS
+
 # add volat variable with Claudia's script
 source("preps/import_singletrial_data.R")
 
@@ -1525,7 +1530,6 @@ data_new <- merge(data_prep, dat)
 
 ## Single Trial Analyses: Set Contrasts and Compare Models (only HC)
 ```{r}
-
 # filter single trial dataset by healthy controls
 data_new_HC <- data_new %>% filter(Group == "HC")
 
@@ -1555,6 +1559,18 @@ mod2.HC.correct.upd <- update(mod2.HC.correct,start=upd1.HC.correct,control=glme
 # model comparison of models predicting Correct
 anova(mod0.HC.correct, mod0a.HC.correct, mod1.HC.correct,mod2.HC.correct.upd)
 
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE)
+
+sjPlot::tab_model(mod1.HC.correct, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("(Intercept)", "Stress", "Reversal Phase", "Stable Phase", "School Years", "Age"),
+                  dv.labels= "Effects of stress on correct responses")
+
+effects_Cond <- effects::effect(term= "Cond", mod= mod1.HC.correct)
+summary(effects_Cond) #output of what the values are
+x_cond <- as.data.frame(effects_Cond)
+
 # use single trial dataset (data_new_HC) to predict w_stay
 
 # - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
@@ -1572,7 +1588,7 @@ mod2.HC.wstay.upd <- update(mod2.HC.wstay,start=upd2.HC.wstay,control=glmerContr
 #here raising number of iterations worked
 
 # model comparison of w_stay models
-anova(mod0.HC.wstay,mod0a.HC.wstay,mod1.HC.wstay,mod2.HC.wstay.upd)
+anova(mod0.HC.wstay,mod0a.HC.wstay,mod1.HC.wstay.upd,mod2.HC.wstay.upd)
 
 # use single trial dataset (data_new_HC) to predict l_switch
 
@@ -1668,9 +1684,6 @@ theme_set(theme_bw())
 # H0.1: 0 = X1 - X2
 # H0.2: 0 = X1 - X3
 
-afurl <- "https://raw.githubusercontent.com/lme4/lme4/master/misc/issues/allFit.R"
-apiResult <- GET(afurl)
-
 
 ###################################################################################################################
 ############################ building models consecutively  #######################################################
@@ -1685,15 +1698,20 @@ apiResult <- GET(afurl)
 mod0.correct <- glmer(Correct~(1|sub_idx), data=data_new, family=binomial)
 mod0a.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx)+school_yrs, data=data_new,family=binomial)
-mod2.correct <- glmer(w_stay~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
-upd2.correct <- getME(mod2.correct,c("theta","fixef"))
-mod2.correct.upd <- update(mod2.correct,start=upd2.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
+mod2.correct <- glmer(Correct~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 mod3.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 upd3.correct <- getME(mod3.correct,c("theta","fixef"))
 mod3.correct.upd <- update(mod3.correct,start=upd3.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
 # model comparison of Correct models
-anova(mod0.correct, mod0a.correct, mod1.correct.upd,mod2.correct.upd,mod3.correct.upd)
+anova(mod0.correct, mod0a.correct,mod1.correct,mod2.correct,mod3.correct.upd)
 
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod2.correct)
+
+sjPlot::tab_model(mod2.correct, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("(Intercept)", "Stress", "Reversal Phase", "Stable Phase", "School Years", "Age", "Interaction of Stress and Reversal Phase", "Interaction of Stress and Stable Phase"),
+                  dv.labels= "Effects of stress on correct responses")
 
 # use single trial dataset (data_new) to predict w_stay
 
@@ -1707,13 +1725,22 @@ mod0a.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new,family=bin
 mod1.wstay <- glmer(w_stay~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 mod2.wstay <- glmer(w_stay~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 upd2.wstay <- getME(mod2.wstay,c("theta","fixef"))
-mod2.wstay.upd <- update(mod2.wstay,start=upd2.wstay,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=2e4)))
+mod2.wstay.upd <- update(mod2.wstay,start=upd2.wstay,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e4)))
 mod3.wstay <- glmer(w_stay~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 upd3.wstay <- getME(mod3.wstay,c("theta","fixef"))
-mod3.wstay.upd <- update(mod3.wstay,start=upd3.wstay,control=glmerControl(optimizer="optimx",optCtrl=list(method="nlminb",maxit=2e4)))
+mod3.wstay.upd <- update(mod3.wstay,start=upd3.wstay,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e4)))
 
 # model comparison of w_stay models
 anova(mod0.wstay,mod0a.wstay,mod1.wstay,mod2.wstay.upd,mod3.wstay.upd)
+
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod3.wstay.upd,
+                   show.values=TRUE, show.p=TRUE)
+
+sjPlot::tab_model(mod3.wstay.upd, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("(Intercept)","AUD", "Stress", "Reversal Phase", "Stable Phase", "School Years", "Age", "Interaction of Stress and Reversal Phase", "Interaction of Stress and Stable Phase"),
+                  dv.labels= "Effects of stress on win-stay behavior")
 
 # use single trial dataset (data_new) to predict l_switch
 
@@ -1729,7 +1756,7 @@ upd1.lswitch <- getME(mod1.lswitch,c("theta","fixef"))
 mod1.lswitch.upd <- update(mod1.lswitch,start=upd1.lswitch,control=glmerControl(optCtrl=list(maxfun=2e4)))
 mod2.lswitch <- glmer(l_switch~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 upd2.lswitch <- getME(mod2.lswitch,c("theta","fixef"))
-mod2.lswitch.upd <- update(mod2.lswitch,start=upd2.lswitch,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=2e4)))
+mod2.lswitch.upd <- update(mod2.lswitch,start=upd2.lswitch,control=glmerControl(optimizer="",optCtrl=list(maxfun=2e4)))
 mod3.lswitch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
 upd3.lswitch <- getME(mod3.lswitch,c("theta","fixef"))
 mod3.lswitch.upd <- update(mod3.lswitch,start=upd3.lswitch,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=2e4)))
