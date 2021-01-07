@@ -1,0 +1,423 @@
+---
+title: "SALAD Analyses in R - hierarchical analyses"
+author: "Lara Wieland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Aggregated Data Import
+```{r}
+## NECESSARY TO RUN THIS FIRST
+source('preps/data_import.R')
+
+```
+
+## Single Trial Analyses Prep
+```{r}
+## NECESSARY TO RUN THIS FIRST
+source("preps/import_singletrial_data.R")
+```
+
+# Aggregated Data Prep
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr)
+source('preps/prep_agg.R')
+
+```
+
+# Cortisol Data Prep
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRSTd
+source('preps/prep_cort.R')
+
+```
+
+# Cortisol Data Analyses
+```{r, include=FALSE}
+## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
+
+```
+
+# Cortisol + Aggregated Data in Long Format
+```{r, include=FALSE}
+# THIS ONLY RELATE TO HC SAMPLE (dat)
+# change coding of Choice_t variable so it can be used to calculate w_stay and l_switch
+data_strials$Choice_t[data_strials$Choice_t==0] <- -1
+
+# create new w_stay and l_switch variables on a single-trial basis
+data_prep <- data_strials %>% group_by(sub_idx,Cond) %>% 
+   mutate(stay = c(Choice_t[1:length(Choice_t)-1]==Choice_t[2:length(Choice_t)],NaN),
+          w_stay = stay*Outcome, 
+          switch = c(Choice_t[1:length(Choice_t)-1]!=Choice_t[2:length(Choice_t)],NaN),
+          l_switch = switch*(1-Outcome))
+
+# prepare physio/behav dataset
+data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx")
+
+data_physio_behav_red <- data_physio_behav_red %>% mutate(sub_idx = data_physio_behav_red$sub_idx+1)
+
+
+# convert to partially (along condition) long for area under the curve by
+longdat.physbehav1 <- melt(data_physio_behav_red,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+        # The source columns
+    measure.vars=c("aucg_control","aucg_stress"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="cond",
+    value.name="aucg"
+)
+
+longdat.physbehav2 <- melt(data_physio_behav_red,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+        # The source columns
+    measure.vars=c("z.peak_cort_control","z.peak_cort_stress"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="cond",
+    value.name="zpeak"
+)
+
+# prepare partially long format
+longdat.physbehav1$cond <- factor(longdat.physbehav1$cond) 
+longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
+
+#longdat.physbehav$cond <- factor(longdat.physbehav$cond, c('aucg_control', 'aucg_stress'), c(1,2))
+# ACHTUNG plyr makes import crash
+library(plyr)
+longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
+longdat.physbehav2$Cond <- revalue(longdat.physbehav2$cond, c("z.peak_cort_control"="control", "z.peak_cort_stress"="stress"))
+
+longdat.physbehav1$sub_idx <- factor(longdat.physbehav1$sub_idx)
+longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
+
+# prepare single trial dataset
+data_prep.HC <- data_prep %>% filter(Group == "HC")
+data_prep.AD <- data_prep %>% filter(Group == "AUD")
+
+## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
+data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
+
+data_new_HC$Cond <- factor(data_new_HC$Cond)
+
+######################## OR THE ABOVE FOR WHOLE DATASET (dat_complete)#####################
+# lateron: add physio stuff for AD as well
+
+dat <- tibble::rowid_to_column(dat_complete, "sub_idx")
+data_new <- merge(data_prep, dat)
+
+
+``` 
+
+## Single Trial Analyses: Set Contrasts and Compare Models (only HC)
+```{r}
+# filter single trial dataset by healthy controls
+#data_new_HC <- data_new %>% filter(Gruppe_control == "Control")
+
+contrasts(data_new_HC$Group) <- c(0.5,-0.5)
+contrasts(data_new_HC$Cond) <- c(-0.5,0.5)
+contrasts(data_new_HC$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
+
+# hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
+# H0.1: 0 = X1 - X2
+# H0.2: 0 = X1 - X3
+
+# Cond factor: 1 = control, 2 = stress
+# F1 (control) = 0.5, F2 (stress) = -0.5 ()
+
+###################################################################################################################
+############################ building models consecutively  #######################################################
+
+# scale aucg variable to avoid convergence issues
+data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
+data_new_HC$zpeak_scaled <- scale(data_new_HC$zpeak)
+
+# use single trial dataset (data_new_HC) to predict Correct
+
+# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
+# - in a model with Correct predicted by random subject intercept + all main effects (1)
+# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.correct <- glmer(Correct~Cond+aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.correct <- glmer(Correct~Cond*aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+
+mod0.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.cond.correct <- glmer(Correct~Cond+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.cond.correct <- glmer(Correct~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+
+mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.correct <- glmer(Correct~zpeak_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.correct <- glmer(Correct~zpeak_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod3.HC.correct <- glmer(Correct~Cond*volat*zpeak_scaled+(1|sub_idx), data=data_new_HC,family=binomial)
+upd3.HC.correct <- getME(mod2.HC.correct,c("theta","fixef"))
+mod3.HC.correct.upd <- update(mod2.HC.correct,start=upd3.HC.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
+
+# model comparison of models predicting Correct
+# here comparison only possible if everyone has a cortisol value (otherwise models do not rely on same sample)
+# 1B057 is lacking T1_cort_ST and T1_amyl_ST (for this person extra calculation of AUC? T2 instead of T1, systematic bias? otherwise exclude) - Florian
+anova(mod1.HC.correct,mod2.HC.correct)
+
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod2.HC.correct,show.values=TRUE, show.p=TRUE, auto.label = FALSE)
+
+sjPlot::tab_model(mod2.HC.correct, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("Intercept", "AUC Cortisol (Stress)", "Reversal Phase", "Stable Phase","AUC Cortisol*Reversal Phase", "AUC Cortisol*Stable Phase"))
+
+# this does not work yet: to export table -> maybe try locally?
+# library(webshot)
+# webshot("manuscript_table_pcorrect.html", "manuscript_table_pcorrect.png")
+
+effects_Cond <- effects::effect(term= "aucg_scaled", mod= mod2.HC.correct)
+summary(effects_Cond) #output of what the values are
+x_cond <- as.data.frame(effects_Cond)
+
+# use single trial dataset (data_new_HC) to predict w_stay
+
+# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
+# - in a model with w_stay predicted by random subject intercept + all main effects (1)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.HC.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.wstay <- glmer(w_stay~aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.wstay <- glmer(w_stay~aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+
+# model comparison of w_stay models
+anova(mod1.HC.wstay,mod2.HC.wstay)
+
+# use single trial dataset (data_new_HC) to predict l_switch
+
+# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
+# - in a model with l_switch predicted by random subject intercept + all main effects (1)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+
+mod0.HC.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_HC, family=binomial)
+mod0a.HC.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+
+# model comparison of lswitch models
+anova(mod0.HC.lswitch,mod0a.HC.lswitch,mod1.HC.lswitch,mod2.HC.lswitch)
+
+
+``` 
+
+```{r}
+
+# filter single trial dataset by healthy controls
+data_new_AUD <- data_new %>% filter(Group == "AUD")
+data_new_AUD$order <-factor(data_new_AUD$order)
+
+contrasts(data_new_AUD$Group) <- c(0.5,-0.5)
+contrasts(data_new_AUD$Cond) <- c(0.5,-0.5)
+contrasts(data_new_AUD$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
+
+# hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
+# H0.1: 0 = X1 - X2
+# H0.2: 0 = X1 - X3
+
+###################################################################################################################
+############################ building models consecutively  #######################################################
+
+# use single trial dataset (data_new_AUD) to predict Correct
+
+# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
+# - in a model with Correct predicted by random subject intercept + all main effects (1)
+# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.AUD.correct <- glmer(Correct~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.correct <- glmer(Correct~Cond+volat+order+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod2.AUD.correct <- glmer(Correct~Cond*volat*order+(1|sub_idx), data=data_new_AUD,family=binomial)
+upd1.AUD.correct <- getME(mod2.AUD.correct,c("theta","fixef"))
+mod2.AUD.correct.upd <- update(mod2.AUD.correct,start=upd1.AUD.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
+
+# model comparison of models predicting Correct
+anova(mod0.AUD.correct, mod0a.AUD.correct, mod1.AUD.correct,mod2.AUD.correct)
+
+# use single trial dataset (data_new_AUD) to predict w_stay
+
+# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
+# - in a model with w_stay predicted by random subject intercept + all main effects (1)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+mod0.AUD.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.wstay <- glmer(w_stay~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod2.AUD.wstay <- glmer(w_stay~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+upd2.AUD.wstay <- getME(mod2.AUD.wstay,c("theta","fixef"))
+mod2.AUD.wstay.upd <- update(mod2.AUD.wstay,start=upd2.AUD.wstay,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=2e4)))
+
+# model comparison of w_stay models
+anova(mod0.AUD.wstay,mod0a.AUD.wstay,mod1.AUD.wstay,mod2.AUD.wstay)
+
+# use single trial dataset (data_new_AUD) to predict l_switch
+
+# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
+# - in a model with l_switch predicted by random subject intercept + all main effects (1)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
+
+mod0.AUD.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_AUD, family=binomial)
+mod0a.AUD.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod1.AUD.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod2.AUD.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+upd2.AUD.lswitch <- getME(mod2.AUD.lswitch,c("theta","fixef"))
+mod2.AUD.lswitch.upd <- update(mod2.AUD.lswitch,start=upd2.AUD.lswitch,control=glmerControl(optCtrl=list(maxfun=2e4)))
+
+# model comparison of lswitch models
+anova(mod0.AUD.lswitch,mod0a.AUD.lswitch,mod1.AUD.lswitch,mod2.AUD.lswitch)
+
+
+``` 
+
+## Single Trial Analyses: Set Contrasts and Compare Models (AUD + HC)
+```{r}
+contrasts(data_new$Group) <- c(0.5,-0.5)
+contrasts(data_new$Cond) <- c(0.5,-0.5)
+contrasts(data_new$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
+
+theme_set(theme_bw())
+
+# hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
+# H0.1: 0 = X1 - X2
+# H0.2: 0 = X1 - X3
+
+
+###################################################################################################################
+############################ building models consecutively  #######################################################
+
+# use single trial dataset (data_new) to predict Correct
+
+# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
+# - in a model with Correct predicted by random subject intercept + all main effects (1)
+# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
+# - in a model with Correct predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
+
+mod0.correct <- glmer(Correct~(1|sub_idx), data=data_new, family=binomial)
+mod0a.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.correct <- glmer(Correct~Group+Cond+volat+(1|sub_idx)+school_yrs, data=data_new,family=binomial)
+mod2.correct <- glmer(Correct~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod3.correct <- glmer(Correct~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd3.correct <- getME(mod3.correct,c("theta","fixef"))
+mod3.correct.upd <- update(mod3.correct,start=upd3.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
+# model comparison of Correct models
+anova(mod0.correct, mod0a.correct,mod1.correct,mod2.correct,mod3.correct.upd)
+
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod2.correct)
+
+sjPlot::tab_model(mod2.correct, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("(Intercept)", "Stress", "Volatility", "Stability", "School Years", "Age", "Interaction of Stress and Reversal Phase", "Interaction of Stress and Stable Phase"),
+                  dv.labels= "Effects of stress on correct responses")
+
+# use single trial dataset (data_new) to predict w_stay
+
+# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
+# - in a model with w_stay predicted by random subject intercept + all main effects (1)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
+# - in a model with w_stay predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
+## CONVERGENCE ISSUE FOR MOST COMPLEX MODEL 2 and 3 (despite trying out bobyqa, NELDER_MEAD and optimx)
+
+mod0.wstay <- glmer(w_stay~(1|sub_idx), data=data_new, family=binomial)
+mod0a.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.wstay <- glmer(w_stay~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod2.wstay <- glmer(w_stay~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd2.wstay <- getME(mod2.wstay,c("theta","fixef"))
+mod2.wstay.upd <- update(mod2.wstay,start=upd2.wstay,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e4)))
+mod3.wstay <- glmer(w_stay~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd3.wstay <- getME(mod3.wstay,c("theta","fixef"))
+mod3.wstay.upd <- update(mod3.wstay,start=upd3.wstay,control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=20e4)))
+
+# model comparison of w_stay models
+anova(mod0.wstay,mod0a.wstay,mod1.wstay,mod2.wstay.upd,mod3.wstay.upd)
+
+# now display results in a manuscript-ready format
+sjPlot::plot_model(mod3.wstay.upd,
+                   show.values=TRUE, show.p=TRUE)
+
+sjPlot::tab_model(mod3.wstay.upd, 
+                  show.re.var= TRUE, 
+                  pred.labels =c("(Intercept)","AUD", "Stress", "Reversal Phase", "Stable Phase", "School Years", "Age", "Interaction of Stress and Reversal Phase", "Interaction of Stress and Stable Phase"),
+                  dv.labels= "Effects of stress on win-stay behavior")
+
+# use single trial dataset (data_new) to predict l_switch
+
+# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
+# - in a model with l_switch predicted by random subject intercept + all main effects (1)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effects (2)
+# - in a model with l_switch predicted by random subject intercept + all main effects + 3-way-interaction effects (3)
+## CONVERGENCE ISSUE FOR MOST COMPLEX MODEL 2 and 3 (despite trying out bobyqa, NELDER_MEAD and optimx)
+
+mod0.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new, family=binomial)
+mod0a.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+mod1.lswitch <- glmer(l_switch~Group+Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd1.lswitch <- getME(mod1.lswitch,c("theta","fixef"))
+mod1.lswitch.upd <- update(mod1.lswitch,start=upd1.lswitch,control=glmerControl(optCtrl=list(maxfun=2e4)))
+mod2.lswitch <- glmer(l_switch~Group*Cond+Group*volat+Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd2.lswitch <- getME(mod2.lswitch,c("theta","fixef"))
+mod2.lswitch.upd <- update(mod2.lswitch,start=upd2.lswitch,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=20e4)))
+mod3.lswitch <- glmer(l_switch~Group*Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new,family=binomial)
+upd3.lswitch <- getME(mod3.lswitch,c("theta","fixef"))
+mod3.lswitch.upd <- update(mod3.lswitch,start=upd3.lswitch,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=20e4)))
+
+# model comparison of lswitch models
+anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch.upd,mod3.lswitch.upd)
+
+######## more complex models with random + nested effects which did not all converge ##############################
+
+#mod1b.correct <-glmer(Correct~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+#mod1c.correct <- glmer(Correct~Group*Cond+(1|sub_idx), data=data_new,family=binomial, nAGQ = 0)
+
+#mod1b.w_stay <-glmer(w_stay~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+#mod1c.w_stay <-glmer(w_stay~Group*Cond+(1|sub_idx), data=data_new,family=binomial)
+
+#mod1b.l_switch <-glmer(l_switch~Group*Cond*volat+(1|sub_idx)+(1|Cond/volat), data=data_new,family=binomial)
+
+#mod2.w_stay <-glmer(w_stay~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
+#mod2.l_switch <-glmer(l_switch~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial,nAGQ = 0)
+#mod2.correct <-glmer(Correct~Group*Cond*volat+(Cond*volat|sub_idx), data=data_new,family=binomial)
+
+
+``` 
+
+## Post Hoc Tests
+```{r}
+# do post-hoc tests on simple models mod1a
+
+emmip(mod2.HC.correct, Cond ~ aucg_scaled)
+
+emmip(mod3.correct, volat ~ Group | c(Cond,volat))
+
+emmip(mod3.correct, volat ~ Cond | Group)
+
+emmip(mod3.wstay, volat ~ Group | Cond)
+emmip(mod3.lswitch, volat ~ Group | Cond)
+
+correct.emm <- emmeans(mod3.correct,pairwise ~ Group | c(Cond,volat))
+
+# do post-hoc tests on HC models
+correct.emm <- emmeans(mod2.correct,~ volat | Cond)
+winstay.emm <- emmeans(mod2.wstay,pairwise ~ volat | Cond)
+loseswitch.emm <- emmeans(mod2.lswitch,pairwise ~ volat | Cond)
+
+# test all contrasts
+contrast(correct.emm,"consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+contrast(loseswitch.emm,"consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+contrast(winstay.emm, "consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")
+
+contrast(correct.emm,"consec", simple ="Group", combine = TRUE, adjust = "mvt",weights = "cells")
+```
