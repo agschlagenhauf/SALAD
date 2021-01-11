@@ -74,8 +74,8 @@ data_prep.HC <- data_prep %>% filter(Group == "HC")
 data_prep.AD <- data_prep %>% filter(Group == "AUD")
 
 ## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
-#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
-data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
+data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
 
 data_new_HC$Cond <- factor(data_new_HC$Cond)
 

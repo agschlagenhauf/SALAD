@@ -244,50 +244,48 @@ plot_diff
 
 ```{r}
 
-
 ## Correlations with cbm Modeling Parameters
 
-
-mf1 <- ggscatter(data_all, x = "IQ_WST", y = "beta_win", 
+model_plot_1 <- ggscatter(data_all, x = "IQ_WST", y = "beta_win", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Cognitive capacities", ylab = "Choice stochasticity (beta win)")
-mf1
+model_plot_1
 
-mf2 <- ggscatter(data_all, x = "IQ_WST", y = "beta_loss", 
+model_plot_2 <- ggscatter(data_all, x = "IQ_WST", y = "beta_loss", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Cognitive capacities", ylab = "Choice stochasticity (beta loss)")
-mf2
+model_plot_2
 
-mf3 <- ggscatter(data_all, x = "p_switch_ST", y = "BIS_total", 
+model_plot_3 <- ggscatter(data_all, x = "p_switch_ST", y = "BIS_total", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Switching behavior ST", ylab = "Impulsivity")
-mf3
+model_plot_3
 
-mf4 <- ggscatter(data_all, x = "p_lose_switch_ST", y = "kappa", 
+model_plot_4 <- ggscatter(data_all, x = "p_lose_switch_ST", y = "kappa", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Switching behavior ST", ylab = "Updating (kappa)")
-mf4
+model_plot_4
 
-mf5 <- ggscatter(data_all, x = "p_lose_switch_CT", y = "kappa", 
+model_plot_5 <- ggscatter(data_all, x = "p_lose_switch_CT", y = "kappa", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Switching behavior CT", ylab = "Updating (kappa)")
-mf5
+model_plot_5
 
-mf6 <- ggscatter(data_all, x = "p_win_stay_ST", y = "kappa", 
+model_plot_6 <- ggscatter(data_all, x = "p_win_stay_ST", y = "kappa", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Switching behavior ST", ylab = "Updating (kappa)")
-mf6
+model_plot_6
 
-mf7 <- ggscatter(data_all, x = "p_win_stay_CT", y = "kappa", 
+model_plot_7 <- ggscatter(data_all, x = "p_win_stay_CT", y = "kappa", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Switching behavior CT", ylab = "Updating (kappa)")
-mf7
+model_plot_7
 ```
 
