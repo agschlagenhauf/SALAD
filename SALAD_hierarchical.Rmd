@@ -37,89 +37,18 @@ source('preps/prep_agg.R')
 # Cortisol Data Prep
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRSTd
-source('preps/prep_cort.R')
+source('preps/cort_import.R')
 
 ```
 
-# Cortisol Data Analyses
+# Cortisol and Behavioral Aggregation 
 ```{r, include=FALSE}
 ## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
+source('preps/prep_cortbehav.R')
 
 ```
 
-# Cortisol + Aggregated Data in Long Format
-```{r, include=FALSE}
-# THIS ONLY RELATE TO HC SAMPLE (dat)
-# change coding of Choice_t variable so it can be used to calculate w_stay and l_switch
-data_strials$Choice_t[data_strials$Choice_t==0] <- -1
 
-# create new w_stay and l_switch variables on a single-trial basis
-data_prep <- data_strials %>% group_by(sub_idx,Cond) %>% 
-   mutate(stay = c(Choice_t[1:length(Choice_t)-1]==Choice_t[2:length(Choice_t)],NaN),
-          w_stay = stay*Outcome, 
-          switch = c(Choice_t[1:length(Choice_t)-1]!=Choice_t[2:length(Choice_t)],NaN),
-          l_switch = switch*(1-Outcome))
-
-# prepare physio/behav dataset
-data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx")
-
-data_physio_behav_red <- data_physio_behav_red %>% mutate(sub_idx = data_physio_behav_red$sub_idx+1)
-
-
-# convert to partially (along condition) long for area under the curve by
-longdat.physbehav1 <- melt(data_physio_behav_red,
-        # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
-        # The source columns
-    measure.vars=c("aucg_control","aucg_stress"),
-        # Name of the destination column that will identify the original
-        # column that the measurement came from
-    variable.name="cond",
-    value.name="aucg"
-)
-
-longdat.physbehav2 <- melt(data_physio_behav_red,
-        # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
-        # The source columns
-    measure.vars=c("z.peak_cort_control","z.peak_cort_stress"),
-        # Name of the destination column that will identify the original
-        # column that the measurement came from
-    variable.name="cond",
-    value.name="zpeak"
-)
-
-# prepare partially long format
-longdat.physbehav1$cond <- factor(longdat.physbehav1$cond) 
-longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
-
-#longdat.physbehav$cond <- factor(longdat.physbehav$cond, c('aucg_control', 'aucg_stress'), c(1,2))
-# ACHTUNG plyr makes import crash
-library(plyr)
-longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
-longdat.physbehav2$Cond <- revalue(longdat.physbehav2$cond, c("z.peak_cort_control"="control", "z.peak_cort_stress"="stress"))
-
-longdat.physbehav1$sub_idx <- factor(longdat.physbehav1$sub_idx)
-longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
-
-# prepare single trial dataset
-data_prep.HC <- data_prep %>% filter(Group == "HC")
-data_prep.AD <- data_prep %>% filter(Group == "AUD")
-
-## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
-#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
-data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
-
-data_new_HC$Cond <- factor(data_new_HC$Cond)
-
-######################## OR THE ABOVE FOR WHOLE DATASET (dat_complete)#####################
-# lateron: add physio stuff for AD as well
-
-dat <- tibble::rowid_to_column(dat_complete, "sub_idx")
-data_new <- merge(data_prep, dat)
-
-
-``` 
 
 ## Single Trial Analyses: Set Contrasts and Compare Models (only HC)
 ```{r}

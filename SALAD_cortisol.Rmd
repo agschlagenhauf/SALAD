@@ -23,19 +23,33 @@ source('preps/data_import.R')
 ```
 # Aggregated Data Prep
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
+## NECESSARY TO RUN THIS
 source('preps/prep_agg.R')
 
 ```
 # Cortisol Data Prep
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST
-source('preps/prep_cort.R')
+source('preps/cort_import.R')
+
+```
+
+## Single Trial Analyses Prep
+```{r}
+## NECESSARY TO RUN THIS FIRST
+source("preps/import_singletrial_data.R")
+```
+
+# Cortisol and Behavioral Aggregation 
+```{r, include=FALSE}
+## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
+source('preps/prep_cortbehav.R')
 
 ```
 
 ## Calculate Cortisol Peaks and AUC Ground = calculated according to Pruessner (2003) formula: 
 ```{r, echo=FALSE}
+
 # create basic histograms to check distribution of cortisol
 
 data_physio_clean.HC <- data_physio_clean %>% filter(Gruppe == "Control")
@@ -49,43 +63,6 @@ hist(data_physio_clean$t6_cort)
 
 hist(data_physio_clean$peak_cort)
 hist(data_physio_clean$aucg)
-
-# time intervals in our study design: t1-t2:28 min, t2-t3: 12 min, t3-t4: 5 min, t4-t5: 15 min, t5-t6: 15 min
-
-data_physio_clean$aucg <- ((data_physio_clean$t2_cort+data_physio_clean$t1_cort)*28)/2 + ((data_physio_clean$t3_cort + data_physio_clean$t2_cort)*12)/2 + ((data_physio_clean$t4_cort + data_physio_clean$t3_cort)*5)/2 + ((data_physio_clean$t5_cort + data_physio_clean$t4_cort)*15)/2 + ((data_physio_clean$t6_cort + data_physio_clean$t5_cort)*15)/2
-
-# calculate and standardize cortisol by T4-T2 = peak_cort
-data_physio_clean <- mutate(data_physio_clean, peak_cort = t4_cort-t2_cort)
-  
-z.peak_cort = (data_physio_clean$peak_cort-mean(data_physio_clean$peak_cort,na.rm=TRUE)/sd(data_physio_clean$peak_cort,na.rm=TRUE)) #ODER scale(peak_cort)
-data_physio_clean$z.peak_cort <- z.peak_cort
-
-# turn it into wide format, by condition
-melted <- melt(data_physio_clean, id.vars= c("VpNr", "condition"))
-data_wide <- dcast(melted,  VpNr ~ variable + condition)
-
-# merge cortisol data with dat by sub_id
-names(data_wide)[names(data_wide) == "VpNr"] <- "sub_id"
-names(data_physio_clean)[names(data_physio_clean) == "VpNr"] <- "sub_id"
-data_wide$sub_id <- as.character(data_wide$sub_id)
-#CHANGE HERE
-dat_all_reduced$sub_id <- str_remove(dat_all_reduced$sub_id, "[_]")
-data_all$sub_id <- str_remove(data_all$sub_id, "[_]")
-
-# merge wide physio dataset with reduced behavioral performance data set and turn everything into numerics apart from the descriptive first six rows
-dat_physio_behav <- merge(data_wide, data_all, by = "sub_id", all.y = TRUE)
-
-#CHANGE HERE
-#dat_physio_behav <- merge(data_wide, dat_all_reduced, by = "sub_id", all.y = TRUE)
-dat_physio_behav[,6:65] <- sapply(dat_physio_behav[,6:65],as.numeric)
-
-data_physio_behav_red =subset(dat_physio_behav, select =-c(Gruppe_control,Gruppe_stress,day_order_control,day_order_stress,excluded,t1_cort_control,t2_cort_control,t3_cort_control,t4_cort_control,t5_cort_control,t6_cort_control,t1_amyl_control,t2_amyl_control,t3_amyl_control,t4_amyl_control,t5_amyl_control,t6_amyl_control,t1_cort_stress,t2_cort_stress,t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,t1_amyl_stress,t2_amyl_stress,t3_amyl_stress,t4_amyl_stress,t5_amyl_stress,t6_amyl_stress,p_correct_CT,p_stay_CT,p_switch_CT,p_win_stay_CT,p_win_switch_CT,p_lose_stay_CT,p_lose_switch_CT,mean_RT_ST,mean_RT_CT,p_correct_ST,p_stay_ST,p_switch_ST,p_win_stay_ST,p_win_switch_ST,p_lose_stay_ST,p_lose_switch_ST))
-
-# convert to fully long by 
-data_physio_long <- data_physio_clean %>% melt(data_physio_clean, id.vars=c("sub_id","condition","Gruppe","day_order"), measure.vars = c("t1_cort","t2_cort","t3_cort","t4_cort","t5_cort","t6_cort","t1_amyl","t2_amyl","t3_amyl","t4_amyl","t5_amyl","t6_amyl"), variable.name = "variable_name")
-n<-length(unique(data_physio_clean$sub_id))
-data_physio_long$time <-rep(c(1:6),each=2*n)
-data_physio_long$marker <- rep(c("cort","amyl"),each=2*6*n)
 
 #names(data_physio_behav_1) = gsub(pattern = "_3*", replacement = "", x = names(data_physio_behav_1))
 
@@ -109,7 +86,7 @@ data_physio_long$marker <- rep(c("cort","amyl"),each=2*6*n)
 ```
 
 
-## Cortisol Analyses Plots
+## Cortisol+Behav Analyses Plots
 ```{r}
 
 dat_physio_behav.HC <- dat_physio_behav %>%
@@ -154,6 +131,7 @@ physio_plot5
 
 ```
 
+
 ## Exploratory Analyses: WM-Median Split - Cortisol - Performance (inspired by Otto,2013)
 ```{r}
 
@@ -161,17 +139,8 @@ physio_plot5
 dat_physio_behav$wm_cap <- dicho(dat_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
 dat_physio_behav$wm_cap <-factor(dat_physio_behav$wm_cap, labels=c("low WM", "high WM"))
 
-
-# plots correct performance onto cortisol stress level in both conditions
-wm_plot <- 
-  ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~cond2)
-wm_plot
-
-wm_plot_cond <- 
-  ggplot(longdat.cond.both, aes(aucg,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
-wm_plot_cond
-
-
+# transform dat_physio_behav into half long format (by condition)
+# first for aucg variable
 longdat.cond.phys <- melt(dat_physio_behav,
         # ID variables - all the variables to keep but not split apart on
     id.vars=c("sub_id","wm_cap"),
@@ -183,6 +152,19 @@ longdat.cond.phys <- melt(dat_physio_behav,
     value.name="aucg"
 )
 
+# then for z.peak_cort variable
+longdat.cond.phys2 <- melt(dat_physio_behav,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id","wm_cap"),
+        # The source columns
+    measure.vars=c("z.peak_cort_control","z.peak_cort_stress"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="cond",
+    value.name="z.peak"
+)
+
+# transform data_all into half long format (by condition)
 longdat.cond.correct <- melt(data_all,
                         # ID variables - all the variables to keep but not split apart on
                         id.vars=c("sub_id"),
@@ -196,25 +178,37 @@ longdat.cond.correct <- melt(data_all,
 
 # extract string ST or CT from phase strings and turn it into logical, then numeric
 longdat.cond.correct <- longdat.cond.correct %>% mutate(cond = grepl("*CT",longdat.cond.correct$cond)) 
-longdat.cond.correct <- longdat.cond.correct %>% mutate(cond2 = longdat.cond.correct$cond*1) %>% rename(cond = longdat.cond.correct$cond2)
+longdat.cond.correct <- longdat.cond.correct %>% mutate(cond2 = longdat.cond.correct$cond*1)
 longdat.cond.correct$cond2<-factor(longdat.cond.correct$cond2, labels=c("stress", "control"))
 
 library(plyr)
-longdat.cond.phys$cond2 <- revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
 
-revalue(x, c("beta"="two", "gamma"="three"))
-#> [1] alpha two   three alpha two  
+# the following steps prepare both longdats (either longdat.cond.phys = aucg or longdat.cond.phys2 = zpeak) for the merge with longdat.cond.correct
+longdat.cond.phys$cond2 <- revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
+longdat.cond.phys2$cond2 <- revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
+
 
 longdat.cond.phys$sub_id <- factor(longdat.cond.phys$sub_id)
+longdat.cond.phys2$sub_id <- factor(longdat.cond.phys2$sub_id)
+
 longdat.cond.correct$sub_id <- factor(longdat.cond.correct$sub_id)
 
 longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id", "cond2"))
+longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "cond2"))
 
-longdat.physbehav3.low <- longdat.physbehav3 %>% filter(wm_cap == "0")
-longdat.physbehav3.high <- longdat.physbehav3 %>% filter(wm_cap == "1")
+# plots correct performance onto cortisol stress level in both conditions
+wm_plot <- 
+  ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~cond2)
+wm_plot
 
+# plots correct performance onto cortisol stress level in both conditions
+cond_aucg_plot <- 
+  ggplot(longdat.cond.both, aes(aucg,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
+cond_aucg_plot
 
-low_wm_plot <-
-   ggplot(longdat.physbehav3.low, aes(aucg_control,p_correct_CT, color = )) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE)
+cond_peak_plot <- 
+  ggplot(longdat.cond.both2, aes(z.peak,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
+cond_peak_plot
+
 
 ```
