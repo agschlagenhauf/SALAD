@@ -5,7 +5,7 @@
 
 longdat.correct <- melt(dat_all,
                         # ID variables - all the variables to keep but not split apart on
-                        id.vars=c("sub_id", "group","order","age","IQ_WST","school_yrs"),
+                        id.vars=c("sub_id", "group","order","age","school_yrs"),
                         # The source columns
                         measure.vars=c("p_correct_pre_ST","p_correct_rev_ST","p_correct_post_ST","p_correct_pre_CT","p_correct_rev_CT","p_correct_post_CT"),
                         # Name of the destination column that will identify the original
