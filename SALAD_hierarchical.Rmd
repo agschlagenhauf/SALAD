@@ -73,9 +73,11 @@ contrasts(data_new_HC$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3)
 ###################################################################################################################
 ############################ building models consecutively  #######################################################
 
-# scale aucg variable to avoid convergence issues
-data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
+# CHANGE HERE scale zpeak_cort or zpeak_amyl or aucg variable to avoid convergence issues
+
+#data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
 #data_new_HC$zpeak_scaled <- scale(data_new_HC$zpeak)
+data_new_HC$zpeak_scaled <- scale(data_new_HC$zpeak_amyl)
 
 # use single trial dataset (data_new_HC) to predict Correct
 
@@ -84,10 +86,15 @@ data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
 # - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
 mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
+<<<<<<< HEAD
 mod1.HC.correct <- glmer(Correct~aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
 mod2.HC.correct <- glmer(Correct~aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 anova(mod0.HC.correct, mod0a.HC.correct,mod1.HC.correct,mod2.HC.correct)
+=======
+mod1.HC.correct <- glmer(Correct~zpeak_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.correct <- glmer(Correct~zpeak_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+>>>>>>> 1af6e26f6736daec99a14c23460000e9e2530038
 
 mod0.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
@@ -116,6 +123,7 @@ anova(mod0.HC.both.correct, mod0a.HC.both.correct,mod1.HC.both.correct,mod2.HC.b
 # 1B057 is lacking T1_cort_ST and T1_amyl_ST (for this person extra calculation of AUC? T2 instead of T1, systematic bias? otherwise exclude) - Florian
 
 # now display results in a manuscript-ready format
+<<<<<<< HEAD
 sjPlot::plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect"))
 
 sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
@@ -127,10 +135,21 @@ sjPlot::tab_model(mod1.HC.correct,
 sjPlot::tab_model(mod1.HC.cond.correct, 
                   show.re.var= TRUE, 
                   pred.labels =c("Intercept", "Condition (Stress Day)", "Reversal Phase", "Stable Phase"))
+=======
+sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, auto.label = FALSE)
+>>>>>>> 1af6e26f6736daec99a14c23460000e9e2530038
 
-sjPlot::tab_model(mod2.HC.correct, 
-                  show.re.var= TRUE, 
-                  pred.labels =c("Intercept", "AUC Cortisol (Stress)", "Reversal Phase", "Stable Phase","AUC Cortisol*Reversal Phase", "AUC Cortisol*Stable Phase"))
+sjPlot::tab_model(mod1.HC.cond.correct, 
+                  show.intercept = TRUE, show.est = TRUE, show.se = TRUE, show.stat = TRUE, show.df = TRUE,
+                  pred.labels =c("Intercept", "Condition", "Reversal Phase", "Stable Phase"))
+
+sjPlot::tab_model(mod1.HC.cond.correct, 
+                  show.se = TRUE, show.stat = TRUE,show.est = TRUE, 
+                  pred.labels =c("Intercept", "Condition", "Reversal Phase", "Stable Phase"))
+
+library(sjPlot) # table functions
+library(sjmisc) # sample data
+library(lme4) # fitting models
 
 # this does not work yet: to export table -> maybe try locally?
 # library(webshot)
