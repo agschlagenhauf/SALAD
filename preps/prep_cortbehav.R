@@ -6,6 +6,7 @@ dat_all_reduced = subset(dat_all, select =-c(p_RT_pre_CT,p_RT_rev_CT,p_RT_post_C
 names(data_wide)[names(data_wide) == "VpNr"] <- "sub_id"
 names(data_physio_clean)[names(data_physio_clean) == "VpNr"] <- "sub_id"
 data_wide$sub_id <- as.character(data_wide$sub_id)
+
 #CHANGE HERE
 dat_all_reduced$sub_id <- str_remove(dat_all_reduced$sub_id, "[_]")
 data_all$sub_id <- str_remove(data_all$sub_id, "[_]")
@@ -32,6 +33,8 @@ data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx
 # the following has to be done to match subject ids to single data trialset (which ranges from 2-29, after 1A001 was dropped)
 data_physio_behav_red <- data_physio_behav_red %>% mutate(sub_idx = data_physio_behav_red$sub_idx+1)
 
+# UNCOMMENT THE FOLLOWING FOR NOT REMOVING 1B_057 (missing aucg_stress value)
+data_physio_behav_red <- data_physio_behav_red[-c(28),]
 
 # convert to partially (along condition) long for area under the curve by
 longdat.physbehav1 <- melt(data_physio_behav_red,
@@ -62,7 +65,7 @@ longdat.physbehav2$cond <- factor(longdat.physbehav2$cond)
 
 #longdat.physbehav$cond <- factor(longdat.physbehav$cond, c('aucg_control', 'aucg_stress'), c(1,2))
 # ACHTUNG plyr makes sourcing prep_agg crash
-library(plyr)
+#library(plyr)
 longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
 longdat.physbehav2$Cond <- revalue(longdat.physbehav2$cond, c("z.peak_cort_control"="control", "z.peak_cort_stress"="stress"))
 

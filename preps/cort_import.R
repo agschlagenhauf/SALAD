@@ -7,6 +7,7 @@ cort_data <- read.spss(cort_file, use.value.label=TRUE, to.data.frame=TRUE)
 
 # clean unnecessary columns from physio data
 data_physio_clean = subset(cort_data, select = -c(sjn,VpNr_numeric,VpOrder,filter_.,operant_inclusion, operant_excl_reason,OPERA0,OPERA1,OPERA2,Comments,COMME0,COMME1,COMME2) )
+#data_physio_clean <- na.omit(data_physio_clean)
 
 #################### Calculate Cortisol Peaks and AUC Ground (aucg) = calculated according to Pruessner (2003) formula: 
 

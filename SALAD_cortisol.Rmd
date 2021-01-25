@@ -43,6 +43,7 @@ source("preps/import_singletrial_data.R")
 # Cortisol and Behavioral Aggregation 
 ```{r, include=FALSE}
 ## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
+# needs Rmisc package
 source('preps/prep_cortbehav.R')
 
 ```
@@ -68,20 +69,39 @@ hist(data_physio_clean$aucg)
 
 # "t1_cort_control","t2_cort_control","t3_cort_control","t4_cort_control","t5_cort_control","t6_cort_control","t1_amyl_control","t2_amyl_control","t3_amyl_control","t4_amyl_control","t5_amyl_control","t6_amyl_control","peak_cort_control","z.peak_cort_control","t1_cort_stress","t2_cort_stress","t3_cort_stress","t4_cort_stress","t5_cort_stress","t6_cort_stress","t1_amyl_stress","t2_amyl_stress","t3_amyl_stress","t4_amyl_stress","t5_amyl_stress","t6_amyl_stress","peak_cort_stress","z.peak_cort_stress","p_correct_CT","p_stay_CT","p_switch_CT","p_win_stay_CT","p_win_switch_CT","p_lose_stay_CT","p_lose_switch_CT","mean_RT_ST","p_correct_ST","p_stay_ST","p_switch_ST","p_win_stay_ST","p_win_switch_ST","p_lose_stay_ST","p_lose_switch_ST",
 
-# data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- dat_physio_behav %>% melt(data_physio_clean, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- data_all_long %>% arrange(sub_id)
-# 
-# data_diff_long$phase <- as.factor(data_diff_long$phase)
-# 
-# data_diff_long.HC <- data_diff_long %>%
-# filter(Gruppe_control=="Control")
-# 
-# ggplot(data_diff_long.HC, aes(x=phase, y=value)) + 
-#   geom_boxplot(aes(middle = mean(value))) + #avoid plotting outliers twice
-#   geom_jitter(position=position_jitter(width=.1, height=0))
+data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
+
+# Claudia's function se that calculates the standard errors
+se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
+
+# definitely remove plyr and Rmisc before doing the following, otherwise group_by will not work
+time_means <- data_physio_long.HC %>%
+    group_by(variable_name,time,condition) %>%
+    summarize(Mean = mean(value, na.rm = TRUE),SE = se(value))
+
+longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
+
+# TSST effect
+tsst_plot <- 
+  ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line()+      geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
+  scale_y_continuous(limits=c(0,11)) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Cortisol level (nmol/l)") +
+   labs(title = 'Cortisol stress response over the course of experimental session',
+        subtitle = 'Clear effect of stress condition',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+   
+tsst_plot
+
+res <- t_test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_control, paired = TRUE)
+
+t_test(aucg ~ cond, data=longdat.physbehav1)
+
 
 ```
 
@@ -91,7 +111,6 @@ hist(data_physio_clean$aucg)
 
 dat_physio_behav.HC <- dat_physio_behav %>%
 filter(Gruppe_control=="Control")
-
 
 # two separate plots: 1) y= p_correct_ST x = z_peak_cort_ST 2) y = p_correct_CT x = z_peak_cort_CT
 # all in one plot: y= p_correct, z = z_peak_cort, color= condition
@@ -187,7 +206,6 @@ library(plyr)
 longdat.cond.phys$cond2 <- revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
 longdat.cond.phys2$cond2 <- revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
 
-
 longdat.cond.phys$sub_id <- factor(longdat.cond.phys$sub_id)
 longdat.cond.phys2$sub_id <- factor(longdat.cond.phys2$sub_id)
 
@@ -201,42 +219,63 @@ wm_plot <-
   ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~cond2)
 wm_plot
 
-wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "wm_cap",
+# like Otto Fig 4, low and high WM span subjects separate for p_correct
+wm_plot_1 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC", ylab = "Percentage of correct responses")
+          xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
+wm_plot_1
+
+wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
 wm_plot_2
 
-# plots correct performance onto cortisol stress level in both conditions
+wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_winstay", color = "cond2",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
+wm_plot_2
+
+# plots correct performance onto cortisol stress level (aucg) separately in both conditions (2*28 data points)
 cond_aucg_plot <- 
   ggplot(longdat.cond.both, aes(aucg,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
 cond_aucg_plot
 
+# plots correct performance onto cortisol stress level (zpeak) separately in both conditions (2*28 data points)
+cond_peak_plot <- 
+  ggplot(longdat.cond.both2, aes(p_correct, z.peak)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
+cond_peak_plot
+
+# plots correct performance onto cortisol stress level in both conditions but one plot (56 data points)
 cond_aucg_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC", ylab = "Percentage of correct responses")
+          xlab = "AUCG", ylab = "Percentage of correct responses")
 cond_aucg_plot_2
 
-cond_peak_plot <- 
-  ggplot(longdat.cond.both2, aes(z.peak,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
-cond_peak_plot
-
-
-# plots learning rate onto cortisol stress level in both conditions
-model_cort_plot_1 <- ggscatter(longdat.cond.both, x = "aucg", y = "al_win", color = "cond2",
+# like Otto Fig 4, low and high WM span subjects separate
+wm_plot_3 <- ggscatter(longdat.cond.both, x = "aucg", y = "al_win", color = "cond2",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC", ylab = "Alpha Win")
+          xlab = "AUC (Cortisol Stress Response)", ylab = "Alpha Win") + facet_wrap("wm_cap")
+wm_plot_3
+
+# plots learning rate onto cortisol stress level in both conditions
+model_cort_plot_1 <- ggscatter(longdat.cond.both, x = "al_win", y = "aucg", color = "cond2",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Alpha Win", ylab = "AUCG")
 model_cort_plot_1
 
-model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "al_loss", color = "cond2",
+model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "al_loss", y = "aucg", color = "cond2", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "AUC", ylab = "Alpha Loss")
 model_cort_plot_2
 
-model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "kappa", color = "cond2",
+model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "kappa", y = "aucg", color = "cond2",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "AUC", ylab = "Kappa")

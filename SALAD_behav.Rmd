@@ -10,9 +10,6 @@ output:
 fig_caption: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 This script 
 - loads packages
@@ -103,6 +100,10 @@ library("Rmisc")
 
 ```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 ```{r}
 # plot underlying task structure for BCCN poster
 
@@ -134,7 +135,7 @@ by(dat$weight, dat$group, mean)
 t.test(weight ~ group, data=dat)
 
 # for IQ with dat_complete due to some NAs
-by(dat_complete$IQ_WST, dat_complete$group, mean)
+#by(dat_complete$IQ_WST, dat_complete$group, mean)
 # by(dat$IQ_WST, dat$group, sd)
 #t.test(IQ_WST ~ group, data=dat_complete)
 
@@ -500,7 +501,7 @@ Within subject measure: volat/phase (pre/rev/post) of Reversal Learning Task
 # now ezANOVA can be filled with dv = p_correct, within-variables = volat(phase) and cond, between-variable = group and type 3 sums of squares
 
 # first for HC only: 
-res.HC.correct <- ezANOVA(longdat.HC.correct, p_correct, id, within = .(volat,cond), between_covariates = .(school_yrs,age), detailed = TRUE, type = 3)
+res.HC.correct <- ezANOVA(longdat.HC.correct, p_correct, id, within = .(volat,cond), detailed = TRUE, type = 3)
 res.HC.correct
 
 # then for AD only: 
@@ -944,7 +945,22 @@ plot_diff <- ggplot(dat_all, aes(sub_id, diff_STCT)) +
   geom_col()
 plot_diff
 
+## attempts to get them all into one plot
 
+# data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
+# 
+# data_diff_long <- dat_physio_behav %>% melt(data_physio_clean, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
+# 
+# data_diff_long <- data_all_long %>% arrange(sub_id)
+# 
+# data_diff_long$phase <- as.factor(data_diff_long$phase)
+# 
+# data_diff_long.HC <- data_diff_long %>%
+# filter(Gruppe_control=="Control")
+# 
+# ggplot(data_diff_long.HC, aes(x=phase, y=value)) + 
+#   geom_boxplot(aes(middle = mean(value))) + #avoid plotting outliers twice
+#   geom_jitter(position=position_jitter(width=.1, height=0))
 
 ```
 
