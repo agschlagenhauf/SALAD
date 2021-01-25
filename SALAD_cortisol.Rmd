@@ -23,7 +23,7 @@ source('preps/data_import.R')
 ```
 # Aggregated Data Prep
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS
+## NECESSARY TO RUN THIS FIRST
 source('preps/prep_agg.R')
 
 ```
@@ -42,12 +42,12 @@ source("preps/import_singletrial_data.R")
 
 # Cortisol and Behavioral Aggregation 
 ```{r, include=FALSE}
-## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
+## NECESSARY TO RUN THIS FIRST
 source('preps/prep_cortbehav.R')
 
 ```
 
-## Calculate Cortisol Peaks and AUC Ground = calculated according to Pruessner (2003) formula: 
+## Check distribution of cortisol and amylase
 ```{r, echo=FALSE}
 
 # create basic histograms to check distribution of cortisol
@@ -64,24 +64,17 @@ hist(data_physio_clean$t6_cort)
 hist(data_physio_clean$peak_cort)
 hist(data_physio_clean$aucg)
 
-#names(data_physio_behav_1) = gsub(pattern = "_3*", replacement = "", x = names(data_physio_behav_1))
 
-# "t1_cort_control","t2_cort_control","t3_cort_control","t4_cort_control","t5_cort_control","t6_cort_control","t1_amyl_control","t2_amyl_control","t3_amyl_control","t4_amyl_control","t5_amyl_control","t6_amyl_control","peak_cort_control","z.peak_cort_control","t1_cort_stress","t2_cort_stress","t3_cort_stress","t4_cort_stress","t5_cort_stress","t6_cort_stress","t1_amyl_stress","t2_amyl_stress","t3_amyl_stress","t4_amyl_stress","t5_amyl_stress","t6_amyl_stress","peak_cort_stress","z.peak_cort_stress","p_correct_CT","p_stay_CT","p_switch_CT","p_win_stay_CT","p_win_switch_CT","p_lose_stay_CT","p_lose_switch_CT","mean_RT_ST","p_correct_ST","p_stay_ST","p_switch_ST","p_win_stay_ST","p_win_switch_ST","p_lose_stay_ST","p_lose_switch_ST",
+hist(data_physio_clean$t1_amyl)
+hist(data_physio_clean$t2_amyl)
+hist(data_physio_clean$t3_amyl)
+hist(data_physio_clean$t4_amyl)
+hist(data_physio_clean$t5_amyl)
+hist(data_physio_clean$t6_amyl)
 
-# data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- dat_physio_behav %>% melt(data_physio_clean, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- data_all_long %>% arrange(sub_id)
-# 
-# data_diff_long$phase <- as.factor(data_diff_long$phase)
-# 
-# data_diff_long.HC <- data_diff_long %>%
-# filter(Gruppe_control=="Control")
-# 
-# ggplot(data_diff_long.HC, aes(x=phase, y=value)) + 
-#   geom_boxplot(aes(middle = mean(value))) + #avoid plotting outliers twice
-#   geom_jitter(position=position_jitter(width=.1, height=0))
+hist(data_physio_clean$peak_amyl)
+
+
 
 ```
 

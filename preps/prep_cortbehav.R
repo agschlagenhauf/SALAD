@@ -6,6 +6,7 @@ dat_all_reduced = subset(dat_all, select =-c(p_RT_pre_CT,p_RT_rev_CT,p_RT_post_C
 names(data_wide)[names(data_wide) == "VpNr"] <- "sub_id"
 names(data_physio_clean)[names(data_physio_clean) == "VpNr"] <- "sub_id"
 data_wide$sub_id <- as.character(data_wide$sub_id)
+
 #CHANGE HERE
 dat_all_reduced$sub_id <- str_remove(dat_all_reduced$sub_id, "[_]")
 data_all$sub_id <- str_remove(data_all$sub_id, "[_]")
@@ -56,26 +57,41 @@ longdat.physbehav2 <- melt(data_physio_behav_red,
                            value.name="zpeak"
 )
 
+longdat.physbehav3 <- melt(data_physio_behav_red,
+                           # ID variables - all the variables to keep but not split apart on
+                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+                           # The source columns
+                           measure.vars=c("z.peak_amyl_control","z.peak_amyl_stress"),
+                           # Name of the destination column that will identify the original
+                           # column that the measurement came from
+                           variable.name="cond",
+                           value.name="zpeak_amyl"
+)
+
 # prepare partially long format
 longdat.physbehav1$cond <- factor(longdat.physbehav1$cond) 
 longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
+longdat.physbehav3$cond <- factor(longdat.physbehav3$cond) 
 
 #longdat.physbehav$cond <- factor(longdat.physbehav$cond, c('aucg_control', 'aucg_stress'), c(1,2))
 # ACHTUNG plyr makes sourcing prep_agg crash
 library(plyr)
 longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
 longdat.physbehav2$Cond <- revalue(longdat.physbehav2$cond, c("z.peak_cort_control"="control", "z.peak_cort_stress"="stress"))
+longdat.physbehav3$Cond <- revalue(longdat.physbehav3$cond, c("z.peak_amyl_control"="control", "z.peak_amyl_stress"="stress"))
 
 longdat.physbehav1$sub_idx <- factor(longdat.physbehav1$sub_idx)
 longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
+longdat.physbehav3$sub_idx <- factor(longdat.physbehav3$sub_idx)
 
 # prepare single trial dataset
 data_prep.HC <- data_prep %>% filter(Group == "HC")
 data_prep.AD <- data_prep %>% filter(Group == "AUD")
 
 ## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
-data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
 #data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
+data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_idx","Cond"))
 
 data_new_HC$Cond <- factor(data_new_HC$Cond)
 

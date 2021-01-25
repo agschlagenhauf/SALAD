@@ -928,23 +928,23 @@ ggplot(dat_all, aes(x=group, y=diff_STCT_pre, color=order)) +
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0))
 
-plot_pre_diff <- ggplot(dat_all, aes(sub_id, diff_STCT_pre)) +
-  geom_point()
-plot_pre_diff
 
-plot_rev_diff <- ggplot(dat_all, aes(sub_id, diff_STCT_rev)) +
-  geom_col()
-plot_rev_diff
+############## the following were attempts to make interindividual differences plots in same plot
 
-plot_post_diff <- ggplot(dat_all, aes(sub_id, diff_STCT_post)) +
-  geom_col()
-plot_post_diff
-
-plot_diff <- ggplot(dat_all, aes(sub_id, diff_STCT)) +
-  geom_col()
-plot_diff
-
-
+# data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
+# 
+# data_diff_long <- dat_physio_behav %>% melt(data_physio_clean, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
+# 
+# data_diff_long <- data_all_long %>% arrange(sub_id)
+# 
+# data_diff_long$phase <- as.factor(data_diff_long$phase)
+# 
+# data_diff_long.HC <- data_diff_long %>%
+# filter(Gruppe_control=="Control")
+# 
+# ggplot(data_diff_long.HC, aes(x=phase, y=value)) + 
+#   geom_boxplot(aes(middle = mean(value))) + #avoid plotting outliers twice
+#   geom_jitter(position=position_jitter(width=.1, height=0))
 
 ```
 

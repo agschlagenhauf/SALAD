@@ -14,11 +14,15 @@ data_physio_clean = subset(cort_data, select = -c(sjn,VpNr_numeric,VpOrder,filte
 
 data_physio_clean$aucg <- ((data_physio_clean$t2_cort+data_physio_clean$t1_cort)*28)/2 + ((data_physio_clean$t3_cort + data_physio_clean$t2_cort)*12)/2 + ((data_physio_clean$t4_cort + data_physio_clean$t3_cort)*5)/2 + ((data_physio_clean$t5_cort + data_physio_clean$t4_cort)*15)/2 + ((data_physio_clean$t6_cort + data_physio_clean$t5_cort)*15)/2
 
-################### Calculate and Standardized Cortisol by T4-T2 (z_peak)
+################### Calculate and Standardized Cortisol by T4-T2 (z.peak_cort) for cortisol and T3-T2 (z.peak_amyl)
 data_physio_clean <- mutate(data_physio_clean, peak_cort = t4_cort-t2_cort)
+data_physio_clean <- mutate(data_physio_clean, peak_amyl = t3_cort-t2_cort)
 
 z.peak_cort = (data_physio_clean$peak_cort-mean(data_physio_clean$peak_cort,na.rm=TRUE)/sd(data_physio_clean$peak_cort,na.rm=TRUE)) #ODER scale(peak_cort)
+z.peak_amyl = (data_physio_clean$peak_amyl-mean(data_physio_clean$peak_amyl,na.rm=TRUE)/sd(data_physio_clean$peak_amyl,na.rm=TRUE)) #ODER scale(peak_cort)
+
 data_physio_clean$z.peak_cort <- z.peak_cort
+data_physio_clean$z.peak_amyl <- z.peak_amyl
 
 # turn it into wide format, by condition
 melted <- melt(data_physio_clean, id.vars= c("VpNr", "condition"))
