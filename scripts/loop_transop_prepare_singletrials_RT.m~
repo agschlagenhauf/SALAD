@@ -8,7 +8,7 @@ clear
 close all
 
 %%%%%%%%%%%%
-cond = 2; % adapt here for CT = 1 and ST = 2
+cond = 1; % adapt here for CT = 1 and ST = 2
 
 if cond == 1
 data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/ST/';
@@ -38,12 +38,8 @@ for sub = 1:length(data)
     sub
     subjects{sub} = data(sub).name(1:end-4);
     load([data_path data(sub).name], 'A', 'R','C','RT');
-    group{sub} = data(sub).name(7);
-        if data(sub).name(8) == 'A'
-        order = 1;
-        elseif data(sub).name(8) == 'B'
-        order = 2;
-        end
+    group{sub} = data(sub).name(7); 
+    order{sub} = data(sub).name(8);
     fin        = length(A);
     response(1:fin, sub)   = double(A==1);
     outcome(1:fin, sub) = double(R==1);
@@ -74,7 +70,7 @@ sub_name(substart:subend)  = subjects(sub);
 sub_group(1:ntrials) = str2double(group{sub});
 sub_idx(1:ntrials)   = sub;
 sub_cond(1:ntrials)  = cond;
-sub_order(1:ntrials)  = order;
+sub_order(1:ntrials)  = str2double(order{sub});
 
 table(substart:subend,:) = [sub_idx',sub_cond',sub_order', sub_group', trial_idx', outcome(:,sub), response(:,sub), correct(:,sub), winstay(:,:,sub), loseshift(:,:,sub), reaction_times(:,sub)];
 
@@ -93,12 +89,7 @@ var_names =['sub_idx', 'Cond','Order', 'Group', 'Trial_idx', 'Outcome', 'Choice_
 
 singletrialstable = array2table(table,'VariableNames',var_names)
 % singletrialstable.Properties.RowNames = sub_name;
-
-if cond == 1
-writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT.csv','WriteRowNames',true, 'Delimiter', 'comma') 
-elseif cond == 2 
 writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT.csv','WriteRowNames',true, 'Delimiter', 'comma') 
-end
 
  
 
