@@ -104,6 +104,12 @@ library("Rmisc")
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
+source('preps/data_import.R')
+
+```
+
 ```{r}
 # plot underlying task structure for BCCN poster
 
@@ -895,46 +901,44 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 ## Plots of intraindividual differences
 ```{r}
 # for whatever reason dat_all is not numeric so make it numeric first
-dat_all[,6:65] <- sapply(dat_all[,6:65],as.numeric)
+data_all[,6:65] <- sapply(data_all[,6:65],as.numeric)
 
 # calculate the difference between individual values (ST-CT) for single phases and all
-dat_all <- mutate(dat_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-dat_all <- mutate(dat_all,m_diff_STCT_pre = mean(diff_STCT_pre))
+data_all <- mutate(data_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_all <- mutate(data_all,m_diff_STCT_pre = mean(diff_STCT_pre))
 
-dat_all <- mutate(dat_all, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-dat_all <- mutate(dat_all,m_diff_STCT_rev = mean(diff_STCT_rev))
+data_all <- mutate(data_all, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_all <- mutate(data_all,m_diff_STCT_rev = mean(diff_STCT_rev))
 
-dat_all <- mutate(dat_all, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-dat_all <- mutate(dat_all,m_diff_STCT_post = mean(diff_STCT_post))
+data_all <- mutate(data_all, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_all <- mutate(data_all,m_diff_STCT_post = mean(diff_STCT_post))
 
-dat_all <- mutate(dat_all, diff_STCT = p_correct_ST - p_correct_CT)
-dat_all <- mutate(dat_all,m_diff_STCT = mean(diff_STCT))
+data_all <- mutate(data_all, diff_STCT = p_correct_ST - p_correct_CT)
+data_all <- mutate(data_all,m_diff_STCT = mean(diff_STCT))
 
-dat_all$group <- as.factor(dat_all$group)
-dat_all$order <- as.factor(dat_all$order)
+data_all$group <- as.factor(data_all$group)
+data_all$order <- as.factor(data_all$order)
 
-ggplot(dat_all, aes(x=group, y=diff_STCT)) + 
+plot.interindiv.diff.order <- ggplot(data_all, aes(x=group, y=diff_STCT, color = order)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.1, height=0)) +
+   xlab("Group") + ylab("Differences between ST and CT Condition") 
+
+ggplot(data_all, aes(x=group, y=diff_STCT_pre)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) 
 
-ggplot(dat_all, aes(x=group, y=diff_STCT_pre)) + 
+ggplot(data_all, aes(x=group, y=diff_STCT_post)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) 
 
-ggplot(dat_all, aes(x=group, y=diff_STCT_post)) + 
-  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
-  geom_jitter(position=position_jitter(width=.1, height=0)) 
-
-ggplot(dat_all, aes(x=group, y=diff_STCT_pre, color=order)) + 
+ggplot(data_all, aes(x=group, y=diff_STCT_pre, color=order)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0))
 
-
-<<<<<<< HEAD
 ## attempts to get them all into one plot
-=======
+
 ############## the following were attempts to make interindividual differences plots in same plot
->>>>>>> 1af6e26f6736daec99a14c23460000e9e2530038
 
 # data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
 # 

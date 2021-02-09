@@ -4,7 +4,8 @@ libs<-c("dplyr", "lme4")
 sapply(libs, require, character.only=TRUE)
 
 str(data_strials)
-data_strials$Group<-factor(data_strials$Group, labels=c("HC", "AUD"))
+# CHANGE HERE depending on analyses on HC sample 1 only (singtrial_file_4) or both groups
+#data_strials$Group<-factor(data_strials$Group, labels=c("HC", "AUD"))
 data_strials$Cond<-factor(data_strials$Cond, labels=c("control", "stress"))
 data_strials$sub_idx<-factor(data_strials$sub_idx)
 
