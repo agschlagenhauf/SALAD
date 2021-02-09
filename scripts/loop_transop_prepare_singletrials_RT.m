@@ -1,7 +1,7 @@
 %%%% Loop for extraction of single-trial predictors and dependent variable for winstay/loseshift analysis of reversal learning data
 %%%% in line with den Ouden et al., Neuron, 2013 (analysis from the Supplement)
 %%%% code by Teresa Katthagen, May 2020.
-
+%%%% adapted by Lara Wieland, Feb 2021 to SALAD data
 
 clc
 clear
