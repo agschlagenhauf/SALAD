@@ -31,7 +31,7 @@ data_physio_behav_red =subset(dat_physio_behav, select =-c(Gruppe_control,Gruppe
 data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx")
 
 # the following has to be done to match subject ids to single data trialset (which ranges from 2-29, after 1A001 was dropped)
-data_physio_behav_red <- data_physio_behav_red %>% mutate(sub_idx = data_physio_behav_red$sub_idx+1)
+#data_physio_behav_red <- data_physio_behav_red %>% mutate(sub_idx = data_physio_behav_red$sub_idx+1)
 
 # UNCOMMENT THE FOLLOWING FOR NOT REMOVING 1B_057 (missing aucg_stress value)
 data_physio_behav_red <- data_physio_behav_red[-c(28),]
@@ -87,13 +87,14 @@ longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
 longdat.physbehav3$sub_idx <- factor(longdat.physbehav3$sub_idx)
 
 # prepare single trial dataset
-data_prep.HC <- data_prep %>% filter(Group == "HC")
-data_prep.AD <- data_prep %>% filter(Group == "AUD")
+# CHANGE HERE for analyses with both samples
+# data_prep.HC <- data_prep %>% filter(Group == "HC")
+# data_prep.AD <- data_prep %>% filter(Group == "AUD")
 
 ## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
-#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
+data_new_HC <- data_prep %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
 #data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
-data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_idx","Cond"))
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_idx","Cond"))
 
 data_new_HC$Cond <- factor(data_new_HC$Cond)
 
