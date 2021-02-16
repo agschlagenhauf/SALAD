@@ -34,7 +34,7 @@ reaction_times  = NaN(ntrials, length(data));
 trial_idx       = 1:ntrials;
 
 
-for sub = 1:length(data)
+for sub = 1 %length(data)
     sub
     subjects{sub} = data(sub).name(1:end-4);
     load([data_path data(sub).name], 'A', 'R','C','RT');

@@ -13,9 +13,15 @@ clc
 % day = '2' %for readout of correct day-data
 
 %settings
-do_log            = 1;
+do_log            =0;
 
-data_path    = ['/Users/larawieland/Documents/ECN/Promotion/SALAD/data_raw/sample1_operant/T2/'] ; %VD-Data-path
+cond = 2; % adapt here for CT = 1 and ST = 2
+
+if cond == 1
+data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/ST/';
+else 
+data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/CT/';
+end
 
 %%%%%%%%%%%%%%%
 
