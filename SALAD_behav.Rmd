@@ -64,7 +64,6 @@ if (!require(sjstats)) install.packages('sjstats')
 if (!require(cowplot)) install.packages('cowplot')
 if (!require(ggpubr)) install.packages('ggpubr')
 if (!require(foreign)) install.packages('foreign')
-if (!require(Rmisc)) install.packages('Rmisc')
 
 library("ggplot2")
 library("readxl")
@@ -96,7 +95,6 @@ library('sjstats') #use for r2 functions
 library('cowplot')
 library("ggpubr")
 library("foreign")
-library("Rmisc")
 
 ```
 
@@ -165,14 +163,15 @@ by(dat$dsst, dat$group, mean)
 # by(dat$dsst, dat$group, sd)
 t.test(dsst ~ group, data=dat)
 
-mean.sum <- dat %>% group_by(group) %>% summarize(mean_age = mean(age))
+mean.sum <- dat  %>% summarize(mean_age = mean(age))
 
 options(knitr.kable.NA = "")
 # then print it in a table using the kable command
 
 kable(
-  mean.sum,
-  col.names = c("Groups", "Mean Age")
+  mean.
+  sum,
+  col.names = c("Groups")
 ) %>%
   kable_styling("striped") %>%
   footnote("HC = Healthy Controls, AD = Alcoholic Disorder", general_title = "Demographic and neuropsychological data")

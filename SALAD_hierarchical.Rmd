@@ -90,9 +90,9 @@ mod1.HC.correct <- glmer(Correct~aucg_scaled+Cond+volat+(1|sub_idx), data=data_n
 mod2.HC.correct <- glmer(Correct~aucg_scaled*Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 anova(mod0.HC.correct, mod0a.HC.correct,mod1.HC.correct,mod2.HC.correct)
-
-mod1.HC.correct <- glmer(Correct~zpeak_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
-mod2.HC.correct <- glmer(Correct~zpeak_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+# 
+# mod1.HC.correct <- glmer(Correct~zpeak_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+# mod2.HC.correct <- glmer(Correct~zpeak_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 mod0.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
@@ -163,11 +163,11 @@ x_cond <- as.data.frame(effects_Cond)
 # - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
 mod0.HC.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_HC,family=binomial)
-mod1.HC.wstay <- glmer(w_stay~aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
-mod2.HC.wstay <- glmer(w_stay~aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.wstay <- glmer(w_stay~Cond+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.wstay <- glmer(w_stay~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 # model comparison of w_stay models
-anova(mod1.HC.wstay,mod2.HC.wstay)
+anova(mod0.HC.wstay,mod1.HC.wstay,mod2.HC.wstay)
 
 # use single trial dataset (data_new_HC) to predict l_switch
 
@@ -204,20 +204,36 @@ anova(mod0.HC.lswitch,mod0a.HC.lswitch,mod1.HC.lswitch,mod2.HC.lswitch)
 library(lmerTest)
 
 # logarithmize RT 
-data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTlog = log10(RT*1000))
+data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTlog10 = log10(RT*1000))
+data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTlog = log(RT*1000))
+data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTinv = 1/(RT*1000))
 
-# interaction between stable phase contrast (1 vs. 3) and condition
+hist(data_new_HC$RTlog)
+hist(data_new_HC$RTlog10)
+
+hist(data_new_HC$RTms)
+hist(data_new_HC$RTinv)
+
+# main effect of cond interaction between stable phase contrast (1 vs. 3) and condition
+# with glmer and link function?
 mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 mod1.HC.RT <- lmer(RTlog~Cond+volat+(1|sub_idx), data=data_new_HC)
 mod2.HC.RT <- lmer(RTlog~Cond*volat+(1|sub_idx), data=data_new_HC)
 
+# same for cortisol 
 # mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 # mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 # mod1.HC.RT <- lmer(RTlog~aucg_scaled+volat+(1|sub_idx), data=data_new_HC)
 # mod2.HC.RT <- lmer(RTlog~aucg_scaled*volat+(1|sub_idx), data=data_new_HC)
+# 
+# # and condition + cortisol 
+# mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+# mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+# mod1.HC.RT <- lmer(RTlog~Cond+aucg_scaled+volat+(1|sub_idx), data=data_new_HC)
+# mod2.HC.RT <- lmer(RTlog~Cond*aucg_scaled*volat+(1|sub_idx), data=data_new_HC)
 
-# model comparison of lswitch models
+# model comparison of RT models
 anova(mod0.HC.RT,mod0a.HC.RT,mod1.HC.RT,mod2.HC.RT)
 
 sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, auto.label = FALSE)
@@ -405,6 +421,7 @@ anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch.upd,mod3.lswitch.upd)
 ```{r}
 # do post-hoc tests on simple models mod1a
 
+emmip(mod1.HC.RT, aucg_scaled ~ volat)
 emmip(mod2.HC.RT, Cond ~ volat)
 
 emmip(mod3.correct, volat ~ Group | c(Cond,volat))
@@ -420,6 +437,8 @@ correct.emm <- emmeans(mod3.correct,pairwise ~ Group | c(Cond,volat))
 correct.emm <- emmeans(mod2.correct,~ volat | Cond)
 winstay.emm <- emmeans(mod2.wstay,pairwise ~ volat | Cond)
 loseswitch.emm <- emmeans(mod2.lswitch,pairwise ~ volat | Cond)
+RT.emm <- emmeans(mod2.HC.RT,pairwise ~ volat | Cond)
+
 
 # test all contrasts
 contrast(correct.emm,"consec",simple = "Cond", adjust = "bonferroni", ratios = TRUE, weights = "cells")

@@ -190,6 +190,63 @@ f3_pwinstay_HC
 
 ```
 
+```{r}
+
+longdat.RT$jvolat2 <- jitter(longdat.RT$volat2, amount=.09)
+longdat.RT$jvolat2 <- jitter(longdat.RT$volat2, amount=.09)
+longdat.HC.RT$jvolat2 <- jitter(longdat.HC.RT$volat2, amount=.09)
+
+f3_RT_HC <- ggplot(data=longdat.HC.RT, aes(y=p_RT)) +
+  
+   #Add geom_() objects
+   geom_point(data = longdat.HC.RT %>% filter(cond2=="1"), aes(x=jvolat2), color = '#00BFC4', size = 1.5, 
+              alpha = .6) +
+      geom_point(data = longdat.HC.RT %>% filter(cond2=="0"), aes(x=jvolat2), color = '#F8766D', size = 1.5,
+              alpha = .6) +
+
+   geom_line(aes(x=jvolat2, group=sub_id), color = 'lightgray', alpha = .3) +
+    
+        geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="pre_ST"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#F8766D') +
+
+      geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="rev_ST"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#F8766D') +
+
+      geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="post_ST"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#F8766D') +
+      
+     geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="pre_CT"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#00BFC4') +
+
+      geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="rev_CT"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#00BFC4') +
+
+      geom_half_boxplot(
+     data = longdat.HC.RT %>% filter(volat1=="post_CT"), aes(x=jvolat2, y=p_RT), position = position_nudge(x = -.3),
+     side = "r",outlier.shape = NA, center = TRUE, errorbar.draw = FALSE, width = .2, 
+     fill = '#00BFC4') +
+   
+   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("Stress_pre", "Stress_rev", "Stress_post","Control_pre","Control_rev","Control_post")) +
+   xlab("Condition") + ylab("Reaction Time") +
+   labs(title = 'High dispersion of reaction times in all phases', 
+           subtitle = 'Condition by phase',
+           caption = 'Datapoints are jittered') + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+
+f3_RT_HC
+
+```
 
 ## Prettier plots according to Tutorial 'repmes_tutorial_R.Rmd': Plots of raw data points (p_correct)
 

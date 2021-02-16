@@ -36,6 +36,7 @@ data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx
 # UNCOMMENT THE FOLLOWING FOR NOT REMOVING 1B_057 (missing aucg_stress value)
 data_physio_behav_red <- data_physio_behav_red[-c(28),]
 
+## create 3 different long formats (depending on aucg_cort or zpeak_cort or zpeak_amyl)
 # convert to partially (along condition) long for area under the curve by
 longdat.physbehav1 <- melt(data_physio_behav_red,
                            # ID variables - all the variables to keep but not split apart on
@@ -75,12 +76,13 @@ longdat.physbehav1$cond <- factor(longdat.physbehav1$cond)
 longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
 longdat.physbehav3$cond <- factor(longdat.physbehav3$cond) 
 
-#longdat.physbehav$cond <- factor(longdat.physbehav$cond, c('aucg_control', 'aucg_stress'), c(1,2))
-# ACHTUNG plyr makes sourcing prep_agg crash
-#library(plyr)
-longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
-longdat.physbehav2$Cond <- revalue(longdat.physbehav2$cond, c("z.peak_cort_control"="control", "z.peak_cort_stress"="stress"))
-longdat.physbehav3$Cond <- revalue(longdat.physbehav3$cond, c("z.peak_amyl_control"="control", "z.peak_amyl_stress"="stress"))
+longdat.physbehav1 <- longdat.physbehav1 %>% mutate(cond=recode(cond, `aucg_control`="control", `aucg_stress`="stress"))
+longdat.physbehav2 <- longdat.physbehav2 %>% mutate(cond=recode(cond, `z.peak_cort_control`="control", `z.peak_cort_stress`="stress"))
+longdat.physbehav3 <- longdat.physbehav3 %>% mutate(cond=recode(cond, `z.peak_amyl_control`="control", `z.peak_amyl_stress`="stress"))
+
+longdat.physbehav1 <- longdat.physbehav1 %>% rename(Cond = cond)
+longdat.physbehav2 <- longdat.physbehav2 %>% rename(Cond = cond)
+longdat.physbehav3 <- longdat.physbehav3 %>% rename(Cond = cond)
 
 longdat.physbehav1$sub_idx <- factor(longdat.physbehav1$sub_idx)
 longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
@@ -91,7 +93,7 @@ longdat.physbehav3$sub_idx <- factor(longdat.physbehav3$sub_idx)
 # data_prep.HC <- data_prep %>% filter(Group == "HC")
 # data_prep.AD <- data_prep %>% filter(Group == "AUD")
 
-## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg or zpeak)
+## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg_cort or zpeak_cort or zpeak_amyl)
 data_new_HC <- data_prep %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
 #data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
 #data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_idx","Cond"))
@@ -103,4 +105,7 @@ data_new_HC$Cond <- factor(data_new_HC$Cond)
 
 dat <- tibble::rowid_to_column(dat, "sub_idx")
 data_new <- merge(data_prep, dat)
-
+# 
+# detach("package:ez", unload = TRUE)
+# detach("package:reshape2", unload = TRUE)
+# library(ez)

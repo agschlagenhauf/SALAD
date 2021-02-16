@@ -87,12 +87,9 @@ data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker 
 # Claudia's function se that calculates the standard errors
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
-# definitely remove plyr and Rmisc before doing the following, otherwise group_by will not work
 time_means <- data_physio_long.HC %>%
     group_by(variable_name,time,condition) %>%
     summarize(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
-
-longdat.physbehav1$Cond <- revalue(longdat.physbehav1$cond, c("aucg_control"="control", "aucg_stress"="stress"))
 
 # TSST effect
 tsst_plot <- 

@@ -1,3 +1,4 @@
+library(reshape2)
 ################### NECESSARY TO RUN FOR SALAD_cortisol ###################
 
 cort_file <- "data_sum/SPSS/Longitudinal_cortisol_ALL_Okt2016.sav"
@@ -30,3 +31,4 @@ data_physio_clean$z.peak_amyl <- z.peak_amyl
 # turn it into wide format, by condition
 melted <- melt(data_physio_clean, id.vars= c("VpNr", "condition"))
 data_wide <- dcast(melted,  VpNr ~ variable + condition)
+

@@ -1,3 +1,4 @@
+library(reshape2)
 ################# Transfer wide to long for p_correct #################
 
 ## transfer from wide to long format p_correct, reclassify variables, prepare for stats
@@ -150,3 +151,55 @@ longdat.HC.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'HC')
 longdat.AD.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'AD')
 
 
+longdat.RT <- melt(dat_all,
+                   # ID variables - all the variables to keep but not split apart on
+                   id.vars=c("sub_id", "group","order","age","school_yrs"),
+                   # The source columns
+                   measure.vars=c("p_RT_pre_ST","p_RT_rev_ST","p_RT_post_ST","p_RT_pre_CT","p_RT_rev_CT","p_RT_post_CT"),
+                   # Name of the destination column that will identify the original
+                   # column that the measurement came from
+                   variable.name="phase",
+                   value.name="p_RT"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.RT$id <- str_last_number(longdat.RT$sub_id)
+longdat.RT$id <- as.factor(longdat.RT$id)
+longdat.RT$p_RT <- as.numeric(longdat.RT$p_RT)
+
+longdat.RT <- longdat.RT %>% arrange(id)
+
+longdat.RT <- longdat.RT %>% arrange(phase)
+
+longdat.RT$volat1 <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.RT$volat <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.RT$volat2 <- as.numeric(longdat.RT$volat1)
+
+
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_ST"] <- "pre"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_ST"] <- "rev"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_ST"] <- "post"
+
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="pre_CT"] <- "pre"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="rev_CT"] <- "rev"
+levels(longdat.RT$volat)[levels(longdat.RT$volat)=="post_CT"] <- "post"
+
+longdat.RT <- longdat.RT %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.RT <- longdat.RT %>% mutate(cond = grepl("*CT",longdat.RT$phase))
+longdat.RT <- longdat.RT %>% mutate(cond2 = longdat.RT$cond*1) %>% rename(cond = longdat.RT$cond2)
+
+longdat.RT$group <- as.factor(longdat.RT$group) 
+levels(longdat.RT$group) <- c('HC', 'AD')
+
+longdat.RT$cond <- as.factor(longdat.RT$cond) 
+levels(longdat.RT$cond) <- c('Stress', 'Control')
+
+longdat.HC.RT <- longdat.RT %>% filter(longdat.RT$group == 'HC')
+longdat.AD.RT <- longdat.RT %>% filter(longdat.RT$group == 'AD')
+
+
+detach("package:ez", unload = TRUE)
+detach("package:reshape2", unload = TRUE)
+library(ez)

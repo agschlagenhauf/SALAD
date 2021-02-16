@@ -1,0 +1,25 @@
+---
+title: "Methods Section SALAD"
+author: Lara Wieland & Claudia Ebrahimi
+date: "10/2/2021"
+output: html_document
+bibliography: qMRI.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Participants performed a probabilistic reversal learning task, which included 160 trials and comprised around 12 minutes. The task was programmed in Matlab (The MathWorks, Natick, MA) with Psychtoolbox. On every trial, participants had to decide between two cards, depicting a different geometric stimulus. The underlying reward structure was not explicitly instructed but could be inferred: reward probabilites associated with the two choice options were anticorrelated (i.e. whenever card A was rewarded, card B was a loss and vice versa). Furthermore, Participants were informed on the probabilistic nature of the task: the respective winning card was only rewarded in 80% of all trials. Right-side versus left-side location of the stimulus was randomized [@Reiter2016].
+
+```{r-graphic}
+# Task Structure
+
+state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
+
+state_rev_2 <- replace(state_rev, state_rev==2, 0)
+
+plot(state_rev_2,type = "o", col = "black", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
+
+
+```
