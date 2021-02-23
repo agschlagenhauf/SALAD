@@ -10,7 +10,7 @@ close all
 %%%%%%%%%%%%
 cond = 2; % adapt here for CT = 1 and ST = 2
 
-if cond == 1
+if cond == 2
 data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/ST/';
 else 
 data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/CT/';
@@ -34,7 +34,7 @@ reaction_times  = NaN(ntrials, length(data));
 trial_idx       = 1:ntrials;
 
 
-for sub = 1 %length(data)
+for sub = 1:length(data)
     sub
     subjects{sub} = data(sub).name(1:end-4);
     load([data_path data(sub).name], 'A', 'R','C','RT');
@@ -95,9 +95,9 @@ singletrialstable = array2table(table,'VariableNames',var_names)
 % singletrialstable.Properties.RowNames = sub_name;
 
 if cond == 1
-writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT.csv','WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT_cond.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 elseif cond == 2 
-writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT.csv','WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT_cond.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 end
 
  
