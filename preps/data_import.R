@@ -9,7 +9,9 @@ extrac_file_2 <- "data_sum/operant_sample1_diffstay.csv"
 sing_trial_file <- "hierarchical/operant_sample1_singletrial.csv"
 sing_trial_file_2 <- "hierarchical/operant_sample1_singtrial_wC.csv"
 sing_trial_file_3 <- "hierarchical/operant_sample1_singtrial_wC_wo1A001.csv"
-sing_trial_file_4 <- "hierarchical/operant_sample1_singtrial_wC_wo1A001_wRT.csv"
+sing_trial_file_4 <- "hierarchical/operant_sample1_singletrials_wRT_cond_S.csv"
+
+param_file <- "modeling/SALAD_bothCond_scaling_DU_tr.csv"
 
 # import data, set missings (999) to NA and turn into tibble
 dat_imported <- read_csv2(extrac_file_2,na = c("999", "NA"))
@@ -21,6 +23,10 @@ rm(data_imported)
 
 # import single trial dataset
 data_strials <- read_csv(sing_trial_file_4,na = c("999", "NA"))
+
+# import only modeling params
+data_params <-  read_csv(param_file,na = c("999", "NA"))
+
 
 # create datasets with only complete subjects or removed outliers (according to < 55% p_correct in all trials or 1/3 phases)
 #dat_physio <- dat_physio %>% subset(dat_physio$operant_inclusion=="1")

@@ -25,19 +25,11 @@ save(file="hierarchical/operant_sample1_singletrial.RData", data_strials)
 # change coding of Choice_t variable so it can be used to calculate w_stay and l_switch
 data_strials$Choice_t[data_strials$Choice_t==0] <- -1
 
-# exclude trials with RT = 0 because they are NaN for w_stay and l_switch as well
-data_strials_exl <- data_strials %>% filter(RT!=0)
-
-which(!data_strials$RT == 0)
-row(data_strials)[which(!data_strials$RT != 0)]
-
-# calculate perc of trials excluded
-perc_excl <- (nrow(data_strials_exl)/nrow(data_strials))*100
-
 # create new w_stay and l_switch variables on a single-trial basis
-data_prep <- data_strials_exl %>% group_by(sub_idx,Cond) %>% 
+data_prep <- data_strials %>% group_by(sub_idx,Cond) %>% 
   mutate(stay = c(Choice_t[1:length(Choice_t)-1]==Choice_t[2:length(Choice_t)],NaN),
          w_stay = stay*Outcome, 
          switch = c(Choice_t[1:length(Choice_t)-1]!=Choice_t[2:length(Choice_t)],NaN),
          l_switch = switch*(1-Outcome))
 
+save(file='/cloud/project/dataframes/data_prep.rda',data_prep)

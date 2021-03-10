@@ -25,7 +25,7 @@ data_physio_long$time <-rep(c(1:6),each=2*n)
 data_physio_long$marker <- rep(c("cort","amyl"),each=2*6*n)
 
 # reduce combined dataset to most relevant parts
-data_physio_behav_red =subset(dat_physio_behav, select =-c(Gruppe_control,Gruppe_stress,day_order_control,day_order_stress,excluded,t1_cort_control,t2_cort_control,t3_cort_control,t4_cort_control,t5_cort_control,t6_cort_control,t1_amyl_control,t2_amyl_control,t3_amyl_control,t4_amyl_control,t5_amyl_control,t6_amyl_control,t1_cort_stress,t2_cort_stress,t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,t1_amyl_stress,t2_amyl_stress,t3_amyl_stress,t4_amyl_stress,t5_amyl_stress,t6_amyl_stress,p_correct_CT,p_stay_CT,p_switch_CT,p_win_stay_CT,p_win_switch_CT,p_lose_stay_CT,p_lose_switch_CT,mean_RT_ST,mean_RT_CT,p_correct_ST,p_stay_ST,p_switch_ST,p_win_stay_ST,p_win_switch_ST,p_lose_stay_ST,p_lose_switch_ST))
+data_physio_behav_red =subset(dat_physio_behav, select =-c(Gruppe_control,Gruppe_stress,day_order_control,day_order_stress,excluded,t1_cort_control,t2_cort_control,t3_cort_control,t4_cort_control,t5_cort_control,t6_cort_control,t1_amyl_control,t2_amyl_control,t3_amyl_control,t4_amyl_control,t5_amyl_control,t6_amyl_control,t1_cort_stress,t2_cort_stress,t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,t1_amyl_stress,t2_amyl_stress,t3_amyl_stress,t4_amyl_stress,t5_amyl_stress,t6_amyl_stress,p_stay_CT,p_switch_CT,p_win_stay_CT,p_win_switch_CT,p_lose_stay_CT,p_lose_switch_CT,p_stay_ST,p_switch_ST,p_win_stay_ST,p_win_switch_ST,p_lose_stay_ST,p_lose_switch_ST))
 
 # prepare physio/behav dataset
 data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx")
@@ -40,7 +40,7 @@ data_physio_behav_red <- data_physio_behav_red[-c(28),]
 # convert to partially (along condition) long for area under the curve by
 longdat.physbehav1 <- melt(data_physio_behav_red,
                            # ID variables - all the variables to keep but not split apart on
-                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss"),
                            # The source columns
                            measure.vars=c("aucg_control","aucg_stress"),
                            # Name of the destination column that will identify the original
@@ -51,7 +51,7 @@ longdat.physbehav1 <- melt(data_physio_behav_red,
 
 longdat.physbehav2 <- melt(data_physio_behav_red,
                            # ID variables - all the variables to keep but not split apart on
-                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss"),
                            # The source columns
                            measure.vars=c("z.peak_cort_control","z.peak_cort_stress"),
                            # Name of the destination column that will identify the original
@@ -62,7 +62,7 @@ longdat.physbehav2 <- melt(data_physio_behav_red,
 
 longdat.physbehav3 <- melt(data_physio_behav_red,
                            # ID variables - all the variables to keep but not split apart on
-                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs"),
+                           id.vars=c("sub_idx","sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss"),
                            # The source columns
                            measure.vars=c("z.peak_amyl_control","z.peak_amyl_stress"),
                            # Name of the destination column that will identify the original
@@ -105,7 +105,5 @@ data_new_HC$Cond <- factor(data_new_HC$Cond)
 
 dat <- tibble::rowid_to_column(dat, "sub_idx")
 data_new <- merge(data_prep, dat)
-# 
-# detach("package:ez", unload = TRUE)
-# detach("package:reshape2", unload = TRUE)
-# library(ez)
+
+save(file='/cloud/project/dataframes/data_new_HC.rda',data_new_HC)

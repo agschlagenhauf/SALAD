@@ -64,6 +64,8 @@ if (!require(sjstats)) install.packages('sjstats')
 if (!require(cowplot)) install.packages('cowplot')
 if (!require(ggpubr)) install.packages('ggpubr')
 if (!require(foreign)) install.packages('foreign')
+if (!require(lubridate)) install.packages('lubridate')
+if (!require(chron)) install.packages('chron')
 
 library("ggplot2")
 library("readxl")
@@ -95,6 +97,8 @@ library('sjstats') #use for r2 functions
 library('cowplot')
 library("ggpubr")
 library("foreign")
+library("lubridate")
+library("chron")
 
 ```
 
@@ -847,23 +851,23 @@ res.AD.RT <- ezANOVA(longdat.AD.RT, p_RT, id, within = .(volat,cond), detailed =
 res.RT <- ezANOVA(longdat.RT, p_RT, id, within = .(volat,cond), between = .(group), between_covariates = .(age), detailed = TRUE, type = 3)
 
 # and make it look nicer
-anova_out(res.RT)
+anova_out(res.HC.RT)
 
 # make a boxplot to take a look at distribution of RT group and phasewise, panels show different group
 ggplot(longdat.RT, aes(x=phase, y=p_RT)) + geom_boxplot() + facet_grid(cols = vars(group))
 
-ezPlot(
-   data = longdat.RT
+p.agg.RT <- ezPlot(
+   data = longdat.HC.RT
    , dv = .(p_RT)
    , wid = .(id)
    , within = .(volat,cond)
-   , between = .(group)
    , x = .(volat)
    , split = .(cond)
-   , col = .(group)
-   , y_lab = "p_RT"
+   , y_lab = "Reaction Times"
    , split_lab = "Condition"
 )
+
+p.agg.RT
 
 xyplot(p_RT ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.RT, type='b')
 
@@ -896,112 +900,4 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 
 ```
 
-
-## Plots of intraindividual differences
-```{r}
-# for whatever reason dat_all is not numeric so make it numeric first
-data_all[,6:65] <- sapply(data_all[,6:65],as.numeric)
-
-# calculate the difference between individual values (ST-CT) for single phases and all
-data_all <- mutate(data_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-data_all <- mutate(data_all,m_diff_STCT_pre = mean(diff_STCT_pre))
-
-data_all <- mutate(data_all, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-data_all <- mutate(data_all,m_diff_STCT_rev = mean(diff_STCT_rev))
-
-data_all <- mutate(data_all, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-data_all <- mutate(data_all,m_diff_STCT_post = mean(diff_STCT_post))
-
-data_all <- mutate(data_all, diff_STCT = p_correct_ST - p_correct_CT)
-data_all <- mutate(data_all,m_diff_STCT = mean(diff_STCT))
-
-data_all$group <- as.factor(data_all$group)
-data_all$order <- as.factor(data_all$order)
-
-plot.interindiv.diff.order <- ggplot(data_all, aes(x=group, y=diff_STCT, color = order)) + 
-  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
-  geom_jitter(position=position_jitter(width=.1, height=0)) +
-   xlab("Group") + ylab("Differences between ST and CT Condition") 
-
-ggplot(data_all, aes(x=group, y=diff_STCT_pre)) + 
-  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
-  geom_jitter(position=position_jitter(width=.1, height=0)) 
-
-ggplot(data_all, aes(x=group, y=diff_STCT_post)) + 
-  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
-  geom_jitter(position=position_jitter(width=.1, height=0)) 
-
-ggplot(data_all, aes(x=group, y=diff_STCT_pre, color=order)) + 
-  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
-  geom_jitter(position=position_jitter(width=.1, height=0))
-
-## attempts to get them all into one plot
-
-############## the following were attempts to make interindividual differences plots in same plot
-
-# data_all_long <- dat_physio_behav %>% melt(dat_physio_behav, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- dat_physio_behav %>% melt(data_physio_clean, id.vars=c("sub_id","Gruppe_control","day_order_control"), measure.vars = c("diff_STCT_pre","diff_STCT_rev", "diff_STCT_post"), variable.name = "phase")
-# 
-# data_diff_long <- data_all_long %>% arrange(sub_id)
-# 
-# data_diff_long$phase <- as.factor(data_diff_long$phase)
-# 
-# data_diff_long.HC <- data_diff_long %>%
-# filter(Gruppe_control=="Control")
-# 
-# ggplot(data_diff_long.HC, aes(x=phase, y=value)) + 
-#   geom_boxplot(aes(middle = mean(value))) + #avoid plotting outliers twice
-#   geom_jitter(position=position_jitter(width=.1, height=0))
-
-```
-
-
-## Plots of modeling parameters
-```{r}
-
-## Correlations with cbm Modeling Parameters
-
-model_plot_1 <- ggscatter(data_all, x = "IQ_WST", y = "beta_win", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cognitive capacities", ylab = "Choice stochasticity (beta win)")
-model_plot_1
-
-model_plot_2 <- ggscatter(data_all, x = "IQ_WST", y = "beta_loss", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cognitive capacities", ylab = "Choice stochasticity (beta loss)")
-model_plot_2
-
-model_plot_3 <- ggscatter(data_all, x = "p_switch_ST", y = "BIS_total", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Switching behavior ST", ylab = "Impulsivity")
-model_plot_3
-
-model_plot_4 <- ggscatter(data_all, x = "p_lose_switch_ST", y = "kappa", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Switching behavior ST", ylab = "Updating (kappa)")
-model_plot_4
-
-model_plot_5 <- ggscatter(data_all, x = "p_lose_switch_CT", y = "kappa", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Switching behavior CT", ylab = "Updating (kappa)")
-model_plot_5
-
-model_plot_6 <- ggscatter(data_all, x = "p_win_stay_ST", y = "kappa", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Switching behavior ST", ylab = "Updating (kappa)")
-model_plot_6
-
-model_plot_7 <- ggscatter(data_all, x = "p_win_stay_CT", y = "kappa", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Switching behavior CT", ylab = "Updating (kappa)")
-model_plot_7
-```
 

@@ -29,24 +29,24 @@ source("preps/import_singletrial_data.R")
 
 # Aggregated Data Prep
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr)
-#detach("package:plyr", unload=TRUE)
+## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr or reshape2)
+#detach("package:reshape2", unload=TRUE)
 source('preps/prep_agg.R')
 
 ```
 
 # Cortisol Data Prep
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRSTd
+## NECESSARY TO RUN THIS FIRST
 source('preps/cort_import.R')
 
 ```
 
 # Cortisol and Behavioral Aggregation 
 ```{r, include=FALSE}
-## IF NOT DONE BEFORE NECESSARY TO RUN SALAD_cortisol.Rmd FIRST
-source('preps/prep_cortbehav.R')
-
+## NECESSARY TO RUN THIS FIRST
+#source('preps/prep_cortbehav.R')
+load("/cloud/project/dataframes/data_new_HC.rda")
 ```
 
 
@@ -55,6 +55,15 @@ source('preps/prep_cortbehav.R')
 ```{r}
 # filter single trial dataset by healthy controls
 #data_new_HC <- data_new %>% filter(Gruppe_control == "Control")
+
+which(!data_new_HC$RT == 0)
+excl_row <- row(data_new_HC)[which(!data_new_HC$RT != 0)]
+
+# calculate perc of trials excluded
+perc_excl <- (length(excl_row)/nrow(data_new_HC))*100
+
+# exclude trials with RT = 0 because they are NaN for w_stay and l_switch as well
+data_new_HC <- data_new_HC %>% filter(RT!=0)
 
 # contrasts(data_new_HC$Group) <- c(0.5,-0.5)
 contrasts(data_new_HC$Cond) <- c(-0.5,0.5)
@@ -86,8 +95,8 @@ data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
 # - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
 mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 mod0a.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
-mod1.HC.correct <- glmer(Correct~aucg_scaled+Cond+volat+(1|sub_idx), data=data_new_HC,family=binomial)
-mod2.HC.correct <- glmer(Correct~aucg_scaled*Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod1.HC.correct <- glmer(Correct~aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
+mod2.HC.correct <- glmer(Correct~aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 anova(mod0.HC.correct, mod0a.HC.correct,mod1.HC.correct,mod2.HC.correct)
 # 
@@ -200,8 +209,6 @@ anova(mod0.HC.lswitch,mod0a.HC.lswitch,mod1.HC.lswitch,mod2.HC.lswitch)
 # - in a model with l_switch predicted by random subject intercept + all main effects (1)
 # - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
 
-# needed in order to get p values on lmer output
-library(lmerTest)
 
 # logarithmize RT 
 data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTlog10 = log10(RT*1000))
@@ -211,32 +218,40 @@ data_new_HC <- data_new_HC %>% rowwise() %>% mutate(RTinv = 1/(RT*1000))
 hist(data_new_HC$RTlog)
 hist(data_new_HC$RTlog10)
 
-hist(data_new_HC$RTms)
 hist(data_new_HC$RTinv)
 
 # main effect of cond interaction between stable phase contrast (1 vs. 3) and condition
 # with glmer and link function?
-mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
-mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
-mod1.HC.RT <- lmer(RTlog~Cond+volat+(1|sub_idx), data=data_new_HC)
-mod2.HC.RT <- lmer(RTlog~Cond*volat+(1|sub_idx), data=data_new_HC)
+mod0.HC.cond.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+mod0a.HC.cond.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+mod1.HC.cond.RT <- lmer(RTlog~Cond+volat+(1|sub_idx), data=data_new_HC)
+mod2.HC.cond.RT <- lmer(RTlog~Cond*volat+(1|sub_idx), data=data_new_HC)
+
+anova(mod0.HC.cond.RT,mod0a.HC.cond.RT,mod1.HC.cond.RT,mod2.HC.cond.RT)
+
 
 # same for cortisol 
-# mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
-# mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
-# mod1.HC.RT <- lmer(RTlog~aucg_scaled+volat+(1|sub_idx), data=data_new_HC)
-# mod2.HC.RT <- lmer(RTlog~aucg_scaled*volat+(1|sub_idx), data=data_new_HC)
-# 
+mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
+mod1.HC.RT <- lmer(RTlog~aucg_scaled+volat+(1|sub_idx), data=data_new_HC)
+mod2.HC.RT <- lmer(RTlog~aucg_scaled*volat+(1|sub_idx), data=data_new_HC)
+
+# model comparison of RT models
+anova(mod0.HC.RT,mod0a.HC.RT,mod1.HC.RT,mod2.HC.RT)
+
 # # and condition + cortisol 
 # mod0.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 # mod0a.HC.RT <- lmer(RTlog~(1|sub_idx), data=data_new_HC)
 # mod1.HC.RT <- lmer(RTlog~Cond+aucg_scaled+volat+(1|sub_idx), data=data_new_HC)
 # mod2.HC.RT <- lmer(RTlog~Cond*aucg_scaled*volat+(1|sub_idx), data=data_new_HC)
 
-# model comparison of RT models
-anova(mod0.HC.RT,mod0a.HC.RT,mod1.HC.RT,mod2.HC.RT)
+sjPlot::plot_model(mod2.HC.cond.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Condition*Stable","Condition*Reversal","Reversal Phase","Stable Phase","Condition Effect"))
 
-sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, auto.label = FALSE)
+sjPlot::tab_model(mod2.HC.cond.RT, 
+                  show.re.var = TRUE, 
+                  pred.labels = TRUE) #c("Intercept", "Condition (Stress Day)", "Reversal Phase", "Stable Phase"))
+
+sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Condition*Stable","Condition*Reversal","Reversal Phase","Stable Phase","Cortisol Effect"))
 
 ``` 
 
@@ -421,8 +436,8 @@ anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch.upd,mod3.lswitch.upd)
 ```{r}
 # do post-hoc tests on simple models mod1a
 
-emmip(mod1.HC.RT, aucg_scaled ~ volat)
-emmip(mod2.HC.RT, Cond ~ volat)
+emmip(mod2.HC.RT, aucg_scaled ~ volat)
+emmip(mod2.HC.cond.RT, Cond ~ volat)
 
 emmip(mod3.correct, volat ~ Group | c(Cond,volat))
 
@@ -437,7 +452,7 @@ correct.emm <- emmeans(mod3.correct,pairwise ~ Group | c(Cond,volat))
 correct.emm <- emmeans(mod2.correct,~ volat | Cond)
 winstay.emm <- emmeans(mod2.wstay,pairwise ~ volat | Cond)
 loseswitch.emm <- emmeans(mod2.lswitch,pairwise ~ volat | Cond)
-RT.emm <- emmeans(mod2.HC.RT,pairwise ~ volat | Cond)
+RT.emm <- emmeans(mod2.HC.cond.RT,pairwise ~ volat | Cond)
 
 
 # test all contrasts

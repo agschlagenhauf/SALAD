@@ -2,9 +2,21 @@ library(reshape2)
 ################### NECESSARY TO RUN FOR SALAD_cortisol ###################
 
 cort_file <- "data_sum/SPSS/Longitudinal_cortisol_ALL_Okt2016.sav"
+time_cort_file <- "data_sum/zeitablauf_selection.csv"
 
-# import cortisol data need to set path first
+# import cortisol data 
 cort_data <- read.spss(cort_file, use.value.label=TRUE, to.data.frame=TRUE)
+
+# import individual time points of cortisol data, there are no NA (but how would one deal with those?)
+data_time_cort <-  read_csv(time_cort_file)
+
+# date_string = '11:30 AM'
+# format = '%I:%M %p'
+# my_date = datetime.strptime(date_string, format)
+# my_date.strftime(format)
+# 
+# T1 <- strptime(data_time_cort$T1, format = "%H:%M:%S %p") 
+# format(T1, "%H:%M:%S")
 
 # clean unnecessary columns from physio data
 data_physio_clean = subset(cort_data, select = -c(sjn,VpNr_numeric,VpOrder,filter_.,operant_inclusion, operant_excl_reason,OPERA0,OPERA1,OPERA2,Comments,COMME0,COMME1,COMME2) )

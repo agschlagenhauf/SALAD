@@ -106,6 +106,13 @@ source('preps/cort_import.R')
 source("preps/import_singletrial_data.R")
 ```
 
+# Cortisol and Behavioral Aggregation 
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST
+source('preps/prep_cortbehav.R')
+
+```
+
 ## Methods
 
 ### Study Design
@@ -149,11 +156,58 @@ Saliva was collected using Salivette saliva sampling tubes (SalivetteCortisol®,
 
 The statistical software R (version 3.6.3; R Foundation for Statistical Computing, Vienna, Austria) with the lme4 package (@Bates2015) for generalized linear mixed-effects models [@Bates2015] was used. Task phase, condition day (CT/ST) and cortisol were modeled as fixed effects, subjects with a random intercept and outcome variables of correct performance, win-stay behavior, lose-switch-behavior and reaction times.
 
+### Modeling
+
+For modeling underlying learning processes individually, we used the novel cbm-Toolbox (@Piray2019), which relies on hierarchical Bayesian inference for concurrent model-fitting. In this toolbox individual model fits affect the parameter estimation: In case of good model fit for a subject, its parameter estimates will affect group priors more strongly than in the case of bad fit.
+
+A comprehensive model space including single-update (1), double-update (2), and individual double update-learning (3), each with one or two learning rates (separate for wins and losses) in combination with a softmax and two inverse temperature parameters (separate for wins and losses) was applied. (@Reiter2016)
+
 ## Results
 
 
 ### Stress Induction
 
+```{r stress induction, include=T, echo = F}
+
+# ADAPT HERE
+data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
+#data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
+
+# Claudia's function se that calculates the standard errors
+se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
+
+time_means <- data_physio_long.HC %>%
+    group_by(variable_name,time,condition) %>%
+    summarize(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
+
+# TSST effect
+tsst_plot <- 
+  ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
+  #scale_y_continuous(limits=c(0,11)) +
+  scale_y_continuous(limits=c(100,350)) +
+  # annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  # annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 100, ymax = 350, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 100, ymax = 350, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Amylase activity in saliva in U/ml") +
+   labs(title = 'Alpha-amylase stress response over the course of experimental session',
+        subtitle = 'Clear effect of stress condition',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+   
+tsst_plot
+
+# paired ttest for AUC ST vs. CT: significant difference
+auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
+auc.amyl.ttest <- stats::t.test(data_physio_behav_red$aucg_amyl_control, data_physio_behav_red$aucg_amyl_stress, paired = TRUE)
+
+# paired ttest for pre-stress cortisol between ST and CT: no significant difference
+auc.T1cort.ttest <- stats::t.test(dat_physio_behav$t1_cort_control, dat_physio_behav$t1_cort_stress, paired = TRUE)
+```
 
 ```{r, include=T,message=FALSE, echo=F, results = 'hide',error=FALSE,warning=FALSE}
 #[(beta=``r mod1.HC.correct@beta[1]`).``r resul$lower.random``; ``r resul$upper.random``], z=``r resul$zval.random``, p=``r resul$pval.random``, see Figure x). 
