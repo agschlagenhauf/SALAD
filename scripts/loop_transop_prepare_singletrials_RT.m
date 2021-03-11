@@ -37,7 +37,7 @@ trial_idx       = 1:ntrials;
 for sub = 1:length(data)
     sub
     subjects{sub} = data(sub).name(1:end-4);
-    load([data_path data(sub).name], 'A', 'R','C','RT');
+    load([data_path data(sub).name], 'A', 'R','C','RT','S');
     group{sub} = data(sub).name(7);
         if data(sub).name(8) == 'A'
         order = 1;
@@ -48,6 +48,7 @@ for sub = 1:length(data)
     response(1:fin, sub)   = double(A==1);
     outcome(1:fin, sub) = double(R==1);
     correct(1:fin, sub) = double(C==1);
+    state(1:fin+1, sub) = double(S==1);
     reaction_times(1:fin, sub) = double(RT);
     
     R     = double(R==1);
@@ -76,7 +77,7 @@ sub_idx(1:ntrials)   = sub;
 sub_cond(1:ntrials)  = cond;
 sub_order(1:ntrials)  = order;
 
-table(substart:subend,:) = [sub_idx',sub_cond',sub_order', sub_group', trial_idx', outcome(:,sub), response(:,sub), correct(:,sub), winstay(:,:,sub), loseshift(:,:,sub), reaction_times(:,sub)];
+table(substart:subend,:) = [sub_idx',sub_cond',sub_order', sub_group', trial_idx', outcome(:,sub), response(:,sub), correct(:,sub), winstay(:,:,sub), loseshift(:,:,sub), reaction_times(:,sub), state(1:160,sub)];
 
     
 end
@@ -86,18 +87,14 @@ n_win_st{h}     = ['winstay_t', num2str(h)];
 n_lose_sh{h}    = ['loseshift_t', num2str(h)];
 end
 
-var_names =['sub_idx', 'Cond','Order', 'Group', 'Trial_idx', 'Outcome', 'Choice_t','Correct', n_win_st, n_lose_sh, 'RT'];
-
-
-
-
+var_names =['sub_idx', 'Cond','Order', 'Group', 'Trial_idx', 'Outcome', 'Choice_t','Correct', n_win_st, n_lose_sh, 'RT','State'];
 singletrialstable = array2table(table,'VariableNames',var_names)
 % singletrialstable.Properties.RowNames = sub_name;
 
 if cond == 1
-writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT_cond.csv','WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT_cond_S.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 elseif cond == 2 
-writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT_cond.csv','WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT_cond_S.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 end
 
  
