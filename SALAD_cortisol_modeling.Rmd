@@ -392,6 +392,7 @@ kable(
   kable_styling("striped",full_width = F,font_size = 7) %>%
   footnote("bold rows: mean and sd", general_title = "Parameters have been transformed to be interpretable: Alpha (1-0), Beta (0-Inf)")
 
+hist(data_params$al_win)
 
 ##################### MODELING params with each other
 
@@ -402,7 +403,7 @@ res <- cor(data_params)
 library("corrplot")
 
 corrplot(res2$r,method = "number", type="upper", 
-         p.mat = res2$P, sig.level = 0.01, insig = "blank")
+         p.mat = res2$P, sig.level = 0.05, insig = "blank")
 
 install.packages("PerformanceAnalytics")
 library(PerformanceAnalytics)
@@ -493,7 +494,15 @@ betloss.ttest <- stats::t.test(data_physio_behav_red$bet_loss)
 pairedwin.ttest <- stats::t.test(data_physio_behav_red$bet_win,data_physio_behav_red$sc_win, paired = TRUE)
 pairedloss.ttest <- stats::t.test(data_physio_behav_red$bet_loss,data_physio_behav_red$sc_loss, paired = TRUE)
 
-##################### MODELING WM
+##################### MODELING WM AND NP
+
+neuropsych_params <- select(data_physio_behav_red,tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss)
+
+res3 <- rcorr(as.matrix(neuropsych_params))
+
+corrplot(res3$r,method = "color", type="upper", 
+         p.mat = res3$P, sig.level = 0.05, insig = "blank")
+
 
 p.mod.betiq1 <- ggscatter(data_all, x = "IQ_WST", y = "bet_win", 
           add = "reg.line", conf.int = TRUE, 
