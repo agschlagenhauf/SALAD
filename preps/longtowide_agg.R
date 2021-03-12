@@ -1,4 +1,6 @@
 library(reshape2)
+################# NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES ###########
+################# ALL DATA FOR BEHAVIORAL/AGGREGATED ANALYSES PREPARED HERE ###########
 ################# Transfer wide to long for p_correct #################
 
 ## transfer from wide to long format p_correct, reclassify variables, prepare for stats
@@ -199,7 +201,88 @@ levels(longdat.RT$cond) <- c('Stress', 'Control')
 longdat.HC.RT <- longdat.RT %>% filter(longdat.RT$group == 'HC')
 longdat.AD.RT <- longdat.RT %>% filter(longdat.RT$group == 'AD')
 
+## transfer from wide to long format p_stay, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
 
-detach("package:ez", unload = TRUE)
-detach("package:reshape2", unload = TRUE)
-library(ez)
+longdat.stay <- melt(dat_all,
+                     # ID variables - all the variables to keep but not split apart on
+                     id.vars=c("sub_id", "group","order","age","school_yrs"),
+                     # The source columns
+                     measure.vars=c("p_stay_pre_ST","p_stay_rev_ST","p_stay_post_ST","p_stay_pre_CT","p_stay_rev_CT","p_stay_post_CT"),
+                     # Name of the destination column that will identify the original
+                     # column that the measurement came from
+                     variable.name="phase",
+                     value.name="p_stay"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.stay$id <- str_last_number(longdat.stay$sub_id)
+longdat.stay$id <- as.factor(longdat.stay$id)
+longdat.stay$p_stay <- as.numeric(longdat.stay$p_stay)
+
+longdat.stay$volat1 <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.stay$volat <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_ST"] <- "pre"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_ST"] <- "rev"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_ST"] <- "post"
+
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="pre_CT"] <- "pre"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="rev_CT"] <- "rev"
+levels(longdat.stay$volat)[levels(longdat.stay$volat)=="post_CT"] <- "post"
+
+longdat.stay <- longdat.stay %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.stay <- longdat.stay %>% mutate(cond = grepl("*CT",longdat.stay$phase))
+longdat.stay <- longdat.stay %>% mutate(cond2 = longdat.stay$cond*1) %>% rename(cond = longdat.stay$cond2)
+
+longdat.stay$group <- as.factor(longdat.stay$group) 
+levels(longdat.stay$group) <- c('HC', 'AD')
+
+longdat.stay$cond <- as.factor(longdat.stay$cond) 
+levels(longdat.stay$cond) <- c('Stress', 'Control')
+
+## transfer from wide to long format p_sw, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.sw <- melt(dat_all,
+                   # ID variables - all the variables to keep but not split apart on
+                   id.vars=c("sub_id", "group","order","age","school_yrs"),
+                   # The source columns
+                   measure.vars=c("p_sw_pre_ST","p_sw_rev_ST","p_sw_post_ST","p_sw_pre_CT","p_sw_rev_CT","p_sw_post_CT"),
+                   # Name of the destination column that will identify the original
+                   # column that the measurement came from
+                   variable.name="phase",
+                   value.name="p_switch"
+)
+
+# use package strex to extract last number from sub_id and turn it into factor
+longdat.sw$id <- str_last_number(longdat.sw$sub_id)
+longdat.sw$id <- as.factor(longdat.sw$id)
+longdat.sw$p_switch <- as.numeric(longdat.sw$p_switch)
+
+longdat.sw$volat1 <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+longdat.sw$volat <- gl(6,nrow(dat_all),labels=c("pre_ST","rev_ST","post_ST","pre_CT","rev_CT","post_CT"))
+
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_ST"] <- "pre"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_ST"] <- "rev"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_ST"] <- "post"
+
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="pre_CT"] <- "pre"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="rev_CT"] <- "rev"
+levels(longdat.sw$volat)[levels(longdat.sw$volat)=="post_CT"] <- "post"
+
+longdat.sw <- longdat.sw %>% arrange(id)
+
+# extract string ST or CT from phase strings and turn it into logical, then numeric
+longdat.sw <- longdat.sw %>% mutate(cond = grepl("*CT",longdat.sw$phase))
+longdat.sw <- longdat.sw %>% mutate(cond2 = longdat.sw$cond*1) %>% rename(cond = longdat.sw$cond2)
+
+longdat.sw$group <- as.factor(longdat.sw$group) 
+levels(longdat.sw$group) <- c('HC', 'AD')
+
+longdat.sw$cond <- as.factor(longdat.sw$cond) 
+levels(longdat.sw$cond) <- c('Stress', 'Control')
+
+longdat.HC.sw <- longdat.sw %>% filter(longdat.sw$group == 'HC')

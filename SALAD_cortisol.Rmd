@@ -10,46 +10,50 @@ output:
 fig_caption: yes
 ---
 
+This script:
+- loads necessary packages
+- imports data (data_physio_clean: physio dataset of both AD and HC - larger sample than behav: 136 in wide format, 
+                data_physio_long: both cortisol and amylase marker (2*6) for every subject in long format
+                dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample
+                data_physio_behav: same but only HC sample)
+- runs and plots basic sanity checks of stress induction and distribution of cortisol/amylase data
+- plots interindividual differences in cortisol response and behavioral performance (p_correct)
+- plots exploratory analyses on WM capacity mediating cortisol impact on behavioral performance (p_correct)
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Aggregated Data Import
-```{r}
-## NECESSARY TO RUN THIS FIRST
-source('preps/data_import.R')
+```{r, include=F}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(lme4)) install.packages("lme4")
+if (!require(ggpubr)) install.packages("ggpubr")
+
+library("ggplot2")
+library("lme4")
+library("ggpubr")
 
 ```
-# Aggregated Data Prep
+
+# Data Import
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/prep_agg.R')
+## NECESSARY TO RUN THIS FIRST:
+
+load('/cloud/project/dataframes/data_physio_long.rda')
+load('/cloud/project/dataframes/data_physio_clean.rda')
+load('/cloud/project/dataframes/dat_physio_behav.rda')
+load('/cloud/project/dataframes/data_physio_behav.rda')
+load('/cloud/project/dataframes/dat_physio_behav_red.rda')
+load('/cloud/project/dataframes/data_physio_behav_red.rda')
 
 ```
-# Cortisol Data Prep
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/cort_import.R')
 
-```
-
-## Single Trial Analyses Prep
-```{r}
-## NECESSARY TO RUN THIS FIRST
-source("preps/import_singletrial_data.R")
-```
-
-# Cortisol and Behavioral Aggregation 
-```{r, include=FALSE}
-
-## NECESSARY TO RUN THIS FIRST
-source('preps/prep_cortbehav.R')
-
-```
 
 ## Sanity check 1: Check distribution of cortisol and amylase
-```{r, echo=FALSE}
+```{r, echo=FALSE, include = F}
 
 # create basic histograms to check distribution of cortisol
 
@@ -75,12 +79,6 @@ hist(data_physio_clean$t6_amyl)
 
 hist(data_physio_clean$peak_amyl)
 
-
-#names(data_physio_behav_1) = gsub(pattern = "_3*", replacement = "", x = names(data_physio_behav_1))
-
-# "t1_cort_control","t2_cort_control","t3_cort_control","t4_cort_control","t5_cort_control","t6_cort_control","t1_amyl_control","t2_amyl_control","t3_amyl_control","t4_amyl_control","t5_amyl_control","t6_amyl_control","peak_cort_control","z.peak_cort_control","t1_cort_stress","t2_cort_stress","t3_cort_stress","t4_cort_stress","t5_cort_stress","t6_cort_stress","t1_amyl_stress","t2_amyl_stress","t3_amyl_stress","t4_amyl_stress","t5_amyl_stress","t6_amyl_stress","peak_cort_stress","z.peak_cort_stress","p_correct_CT","p_stay_CT","p_switch_CT","p_win_stay_CT","p_win_switch_CT","p_lose_stay_CT","p_lose_switch_CT","mean_RT_ST","p_correct_ST","p_stay_ST","p_switch_ST","p_win_stay_ST","p_win_switch_ST","p_lose_stay_ST","p_lose_switch_ST",
-
-# ADAPT HERE
 data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
 #data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
 
@@ -109,8 +107,9 @@ tsst_plot <-
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
-   
 tsst_plot
+
+ggsave(tsst_plot, filename = "perc_wstay_HC.png","jpg", "/cloud/project/plots/committee_plots")
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
@@ -137,27 +136,27 @@ cort.nonresponder <- dat_physio_behav %>% filter(cort_response_stress < 1.5)
 ## Cortisol+Behav Analyses Plots
 ```{r}
 
-# calculate the difference between individual values (ST-CT) for single phases and all
-data_physio_behav_red <- mutate(data_physio_behav_red, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-data_physio_behav_red <- mutate(data_physio_behav_red,m_diff_STCT_pre = mean(diff_STCT_pre))
+# calculate the difference between individual p_correct values (ST-CT) for single phases and all
+data_physio_behav <- mutate(data_physio_behav, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_pre = mean(diff_STCT_pre))
 
-data_physio_behav_red <- mutate(data_physio_behav_red, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-data_physio_behav_red <- mutate(data_physio_behav_red,m_diff_STCT_rev = mean(diff_STCT_rev))
+data_physio_behav <- mutate(data_physio_behav, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_rev = mean(diff_STCT_rev))
 
-data_physio_behav_red <- mutate(data_physio_behav_red, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-data_physio_behav_red <- mutate(data_physio_behav_red,m_diff_STCT_post = mean(diff_STCT_post))
+data_physio_behav <- mutate(data_physio_behav, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_post = mean(diff_STCT_post))
 
-data_physio_behav_red <- mutate(data_physio_behav_red, diff_STCT = p_correct_ST - p_correct_CT)
+data_physio_behav <- mutate(data_physio_behav, diff_STCT = p_correct_ST - p_correct_CT)
 
 # create continuous variable for interindividual cortisol response change:
-data_physio_behav_red <- data_physio_behav_red %>% rowwise() %>% mutate(aucg_diff = aucg_stress - aucg_control)
+data_physio_behav <- data_physio_behav %>% rowwise() %>% mutate(aucg_diff = aucg_stress - aucg_control)
 
-plot.interindiv.cort <- ggplot(data_physio_behav_red, aes(x=group, y=aucg_diff, color = order)) + 
+plot.interindiv.cort <- ggplot(data_physio_behav, aes(x=group, y=aucg_diff, color = order)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) +
    xlab("Group") + ylab("Differences between ST and CT AUCG Cortisol") 
 
-plot.diff.corr <- ggscatter(data_physio_behav_red, x = "diff_STCT", y = "aucg_diff", 
+plot.diff.corr <- ggscatter(data_physio_behav, x = "diff_STCT", y = "aucg_diff", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Interindiv p_correct differences", ylab = "Interindiv AUC-G cortisol differences")
@@ -196,11 +195,6 @@ physio_plot4 <-  ggscatter(dat_physio_behav.HC, x = "p_win_stay_ST", y = "aucg_s
           xlab = "Win Stay Behavior (ST)", ylab = "AUC Cortisol (ST)")
 physio_plot4
 
-physio_plot5 <-  ggscatter(dat_physio_behav.HC, x = "p_lose_switch_ST", y = "aucg_stress", na.rm = TRUE,
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Lose Switch Behavior (ST)", ylab = "AUC Cortisol (ST)")
-physio_plot5
 
 ```
 
@@ -209,12 +203,16 @@ physio_plot5
 ```{r}
 
 # dichotomize HC dataset by WM capacity (num_backward)
-dat_physio_behav$wm_cap <- dicho(dat_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
-dat_physio_behav$wm_cap <-factor(dat_physio_behav$wm_cap, labels=c("low WM", "high WM"))
+data_physio_behav$wm_cap <- dicho(data_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
+data_physio_behav$wm_cap <-factor(data_physio_behav$wm_cap, labels=c("low WM", "high WM"))
+
+# dichotomize HC dataset by lifetime stress (PSS)
+data_physio_behav$lt_stress <- dicho(data_physio_behav$PSS_Total, dich.by = "median", as.num = TRUE)
+data_physio_behav$lt_stress <-factor(data_physio_behav$lt_stress, labels=c("low lifetime stress", "high lifetime stress"))
 
 # transform dat_physio_behav into half long format (by condition)
 # first for aucg variable
-longdat.cond.phys <- melt(dat_physio_behav,
+longdat.cond.phys <- melt(data_physio_behav,
         # ID variables - all the variables to keep but not split apart on
     id.vars=c("sub_id","wm_cap"),
         # The source columns
@@ -226,7 +224,7 @@ longdat.cond.phys <- melt(dat_physio_behav,
 )
 
 # then for z.peak_cort variable
-longdat.cond.phys2 <- melt(dat_physio_behav,
+longdat.cond.phys2 <- melt(data_physio_behav,
         # ID variables - all the variables to keep but not split apart on
     id.vars=c("sub_id","wm_cap"),
         # The source columns
@@ -237,10 +235,10 @@ longdat.cond.phys2 <- melt(dat_physio_behav,
     value.name="z.peak"
 )
 
-# transform data_all into half long format (by condition)
-longdat.cond.correct <- melt(data_all,
+# then for p_correct while keeping modeling params
+longdat.cond.correct <- melt(data_physio_behav,
                         # ID variables - all the variables to keep but not split apart on
-                        id.vars=c("sub_id","al_win", "al_loss", "kappa", "beta_win","beta_loss"),
+                        c("sub_id","wm_cap"),
                         # The source columns
                         measure.vars=c("p_correct_ST","p_correct_CT"),
                         # Name of the destination column that will identify the original
@@ -257,16 +255,16 @@ longdat.cond.correct$cond2<-factor(longdat.cond.correct$cond2, labels=c("stress"
 library(plyr)
 
 # the following steps prepare both longdats (either longdat.cond.phys = aucg or longdat.cond.phys2 = zpeak) for the merge with longdat.cond.correct
-longdat.cond.phys$cond2 <- revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
-longdat.cond.phys2$cond2 <- revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
+longdat.cond.phys$cond2 <- plyr::revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
+longdat.cond.phys2$cond2 <- plyr::revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
 
 longdat.cond.phys$sub_id <- factor(longdat.cond.phys$sub_id)
 longdat.cond.phys2$sub_id <- factor(longdat.cond.phys2$sub_id)
 
 longdat.cond.correct$sub_id <- factor(longdat.cond.correct$sub_id)
 
-longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id", "cond2"))
-longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "cond2"))
+longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id", "cond2","wm_cap"))
+longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "cond2","wm_cap"))
 
 # plots correct performance onto cortisol stress level in both conditions
 wm_plot <- 
@@ -286,11 +284,6 @@ wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "
           xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
 wm_plot_2
 
-wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_winstay", color = "cond2",
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
-wm_plot_2
 
 # plots correct performance onto cortisol stress level (aucg) separately in both conditions (2*28 data points)
 cond_aucg_plot <- 
@@ -309,31 +302,6 @@ cond_aucg_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", co
           xlab = "AUCG", ylab = "Percentage of correct responses")
 cond_aucg_plot_2
 
-# like Otto Fig 4, low and high WM span subjects separate
-wm_plot_3 <- ggscatter(longdat.cond.both, x = "aucg", y = "al_win", color = "cond2",
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC (Cortisol Stress Response)", ylab = "Alpha Win") + facet_wrap("wm_cap")
-wm_plot_3
-
-# plots learning rate onto cortisol stress level in both conditions
-model_cort_plot_1 <- ggscatter(longdat.cond.both, x = "al_win", y = "aucg", color = "cond2",
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Alpha Win", ylab = "AUCG")
-model_cort_plot_1
-
-model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "al_loss", y = "aucg", color = "cond2", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC", ylab = "Alpha Loss")
-model_cort_plot_2
-
-model_cort_plot_2 <- ggscatter(longdat.cond.both, x = "kappa", y = "aucg", color = "cond2",
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "AUC", ylab = "Kappa")
-model_cort_plot_2
-
-
 ```
+
+

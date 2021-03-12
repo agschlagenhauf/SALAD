@@ -1,5 +1,5 @@
 ---
-title: "SALAD Analyses in R - hierarchical analyses"
+title: "SALAD Analyses in R - hierarchical/single-trial analyses"
 author: "Lara Wieland"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -10,52 +10,54 @@ output:
 fig_caption: yes
 ---
 
+This script:
+- loads necessary packages
+- imports data (data_new for full  sample, data_new_HC for only HC and excluding 1B057 who has an AUC Stress missing value)
+- sets up contrasts for phase and condition
+- sets up lmes for pcorrect, winstay, loseswitch, RT for HC and AD separately and together (only for HC sample final)
+- conducts post-hoc tests on some of the winning models using emmip
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Aggregated Data Import
-```{r}
-## NECESSARY TO RUN THIS FIRST
-source('preps/data_import.R')
+```{r, include=F}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(lme4)) install.packages("lme4")
+if (!require(hypr)) install.packages('hypr')
+if (!require(schoRsch)) install.packages('schoRsch')
+if (!require(emmeans)) install.packages('emmeans')
+if (!require(psycho)) install.packages('psycho')
+if (!require(sjPlot)) install.packages('sjPlot')
+if (!require(sjmisc)) install.packages('sjmisc')
+if (!require(effects)) install.packages('effects')
+if (!require(sjstats)) install.packages('sjstats')
+
+library("ggplot2")
+library("lme4")
+library("hypr") # for setting up contrasts
+library('schoRsch') # for outputs in APA style
+library('emmeans') # for post-hoc tests of lmer
+library('psycho')
+library('sjPlot') #for plotting lmer and glmer mods
+library('sjmisc') 
+library('effects') 
+library('sjstats') #use for r2 functions
 
 ```
 
-## Single Trial Analyses Prep
-```{r}
-## NECESSARY TO RUN THIS FIRST
-source("preps/import_singletrial_data.R")
-```
-
-# Aggregated Data Prep
+# Data Import
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr or reshape2)
-#detach("package:reshape2", unload=TRUE)
-source('preps/prep_agg.R')
-
+## NECESSARY TO RUN THIS FIRST:
+load('/cloud/project/dataframes/data_new_HC.rda')
+load('/cloud/project/dataframes/data_prep.rda')
 ```
-
-# Cortisol Data Prep
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/cort_import.R')
-
-```
-
-# Cortisol and Behavioral Aggregation 
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-#source('preps/prep_cortbehav.R')
-load("/cloud/project/dataframes/data_new_HC.rda")
-```
-
-
 
 ## Single Trial Analyses: Set Contrasts and Compare Models (only HC)
 ```{r}
-# filter single trial dataset by healthy controls
-#data_new_HC <- data_new %>% filter(Gruppe_control == "Control")
-
+# extract trials with RT = 0, because they are missings/NAN
 which(!data_new_HC$RT == 0)
 excl_row <- row(data_new_HC)[which(!data_new_HC$RT != 0)]
 
@@ -153,10 +155,6 @@ sjPlot::tab_model(mod1.HC.cond.correct,
                   show.se = TRUE, show.stat = TRUE,show.est = TRUE, 
                   pred.labels =c("Intercept", "Condition", "Reversal Phase", "Stable Phase"))
 
-library(sjPlot) # table functions
-library(sjmisc) # sample data
-library(lme4) # fitting models
-
 # this does not work yet: to export table -> maybe try locally?
 # library(webshot)
 # webshot("manuscript_table_pcorrect.html", "manuscript_table_pcorrect.png")
@@ -249,8 +247,9 @@ sjPlot::plot_model(mod2.HC.cond.RT,show.values=TRUE, show.p=TRUE, axis.labels = 
 
 sjPlot::tab_model(mod2.HC.cond.RT, 
                   show.re.var = TRUE, 
-                  pred.labels = TRUE) #c("Intercept", "Condition (Stress Day)", "Reversal Phase", "Stable Phase"))
+                  pred.labels = c("Intercept","Condition Effect","Reversal Phase","Stable Phase","Condition*Reversal","Condition*Stable"))
 
+# I am not clear on why the axis labels are not in proper order but this is the only way it actually works and matches the figure
 sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Condition*Stable","Condition*Reversal","Reversal Phase","Stable Phase","Cortisol Effect"))
 
 ``` 
@@ -259,7 +258,6 @@ sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Co
 
 # filter single trial dataset by healthy controls
 data_new_AUD <- data_new %>% filter(Group == "AUD")
-data_new_AUD$order <-factor(data_new_AUD$order)
 
 contrasts(data_new_AUD$Group) <- c(0.5,-0.5)
 contrasts(data_new_AUD$Cond) <- c(0.5,-0.5)
@@ -278,7 +276,7 @@ contrasts(data_new_AUD$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3
 # - in a model with Correct predicted by random subject intercept + all main effects (1)
 # - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
 mod0.AUD.correct <- glmer(Correct~(1|sub_idx), data=data_new_AUD, family=binomial)
-mod0a.AUD.correct <- glmer(Correct~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
+mod0a.AUD.correct <- glmer(Correct~(1|sub_idx)+age, data=data_new_AUD,family=binomial)
 mod1.AUD.correct <- glmer(Correct~Cond+volat+order+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
 mod2.AUD.correct <- glmer(Correct~Cond*volat*order+(1|sub_idx), data=data_new_AUD,family=binomial)
 upd1.AUD.correct <- getME(mod2.AUD.correct,c("theta","fixef"))
@@ -327,12 +325,9 @@ contrasts(data_new$Group) <- c(0.5,-0.5)
 contrasts(data_new$Cond) <- c(0.5,-0.5)
 contrasts(data_new$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
 
-theme_set(theme_bw())
-
 # hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
 # H0.1: 0 = X1 - X2
 # H0.2: 0 = X1 - X3
-
 
 ###################################################################################################################
 ############################ building models consecutively  #######################################################
