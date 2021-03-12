@@ -1,4 +1,6 @@
 library(reshape2)
+library(strex)
+
 ################# NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES ###########
 ################# ALL DATA FOR BEHAVIORAL/AGGREGATED ANALYSES PREPARED HERE ###########
 ################# Transfer wide to long for p_correct #################

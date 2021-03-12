@@ -13,6 +13,33 @@ fig_caption: yes
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, include=F}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(lme4)) install.packages("lme4")
+if (!require(gghalves)) install.packages("gghalves")
+if (!require(readr)) install.packages("readr")
+if (!require(dplyr)) install.packages("dplyr")
+
+library("ggplot2")
+library("lme4")
+library("gghalves")
+library("readr")
+library("dplyr")
+
+```
+
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST:
+
+load('/cloud/project/dataframes/dat_all.rda')
+load('/cloud/project/dataframes/data_all.rda')
+load('/cloud/project/dataframes/dat.nooutlier.rda')
+load('/cloud/project/dataframes/data_params.rda')
+
+```
+
 # Aggregated Data Import
 ```{r}
 ## NECESSARY TO RUN THIS FIRST

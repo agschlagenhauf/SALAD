@@ -32,7 +32,7 @@ if (!require(corrplot)) install.packages("corrplot")
 if (!require(PerformanceAnalytics)) install.packages("PerformanceAnalytics")
 if (!require(kableExtra)) install.packages('kableExtra')
 if (!require(Hmisc)) install.packages('Hmisc')
-
+if (!require(sjmisc)) install.packages('sjmisc')
 
 library("ggplot2")
 library("lme4")
@@ -40,6 +40,8 @@ library("corrplot")
 library("PerformanceAnalytics")
 library("kableExtra")
 library("Hmisc")
+library("sjmisc")
+
 
 ```
 
@@ -85,6 +87,46 @@ kable(
 hist(data_params$al_win)
 hist(data_params$al_loss)
 
+# Distribution of parameters: separated because of different ranges
+
+data_params_al <- data_params %>% select(c("al_win","al_loss"))
+data_params_bet <- data_params %>% select(c("bet_win","bet_loss","sc_bet_win","sc_bet_loss"))
+data_params_sc <- data_params %>% select(c("sc_win","sc_loss"))
+
+data_params_bet <- tibble::rowid_to_column(data_params_bet, "sub_idx")
+data_params_al <- tibble::rowid_to_column(data_params_al, "sub_idx")
+
+data_params_long_bet <- data_params_bet %>% 
+  gather(key = "Parameter", value = "ParameterValue", -sub_idx)
+data_params_long_bet
+
+data_params_long_al <- data_params_al %>% 
+  gather(key = "Parameter", value = "ParameterValue", -sub_idx)
+data_params_long_al
+
+p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
+p.betviol
+
+p.alviol <- ggplot(data_params_long_al, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE) + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
+p.alviol
+
+ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/committee_plots")
+ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/committee_plots")
+
+
+
+df <- read.table(text = "Species  Zone1   Zone2   Zone3   Zone4
+cf       0.0045  0.040   0.054    0.089
+cx       0.12    0.145   0.098    0.095
+cy       0.044   0.067   0.051    0.077",
+                 header = TRUE, stringsAsFactors = FALSE)
+
+df_long <- df %>% 
+  gather(key = "Zone", value = "Rate", -Species)
+df_long
+
+ggplot(df_long, aes(x = Zone, y = Rate)) +
+  geom_violin(trim = FALSE) 
 
 ##################### CORRELATION MODELING params with each other
 
@@ -186,7 +228,11 @@ betloss.ttest <- stats::t.test(data_physio_behav$bet_loss)
 pairedwin.ttest <- stats::t.test(data_physio_behav$bet_win,data_physio_behav$sc_win, paired = TRUE)
 pairedloss.ttest <- stats::t.test(data_physio_behav$bet_loss,data_physio_behav$sc_loss, paired = TRUE)
 
-##################### MODELING WM AND NP
+```
+
+
+## Neuropsychology and Modeling Parameters
+```{r}
 
 neuropsych_params <- select(data_physio_behav,tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss)
 
