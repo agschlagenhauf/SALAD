@@ -12,104 +12,34 @@ bibliography: SALAD.bib
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, include=F}
-rm(list = ls()) 
+# Data Import
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST: load behavioral data
 
-if (!require(ggplot2)) install.packages("ggplot2")
-if (!require(readxl)) install.packages("readxl")
-if (!require(tidyverse)) install.packages("tidyverse")
-if (!require(psych)) install.packages("psych")
-if (!require(car)) install.packages("car")
-if (!require(lme4)) install.packages("lme4")
-if (!require(ez)) install.packages("ez")
-if (!require(broom)) install.packages("broom")
-if (!require(strex)) install.packages("strex")
-if (!require(nlme)) install.packages("nlme")
-if (!require(lattice)) install.packages("lattice")
-if (!require(tinytex)) install.packages('tinytex')
-if (!require(purrr)) install.packages('purrr')
-if (!require(knitr)) install.packages("knitr")
-if (!require(kableExtra)) install.packages('kableExtra')
-if (!require(stringr)) install.packages('stringr')
-if (!require(hypr)) install.packages('hypr')
-if (!require(schoRsch)) install.packages('schoRsch')
-if (!require(hrbrthemes)) install.packages('hrbrthemes')
-if (!require(emmeans)) install.packages('emmeans')
-if (!require(psycho)) install.packages('psycho')
-if (!require(gghalves)) install.packages('gghalves')
-if (!require(sjPlot)) install.packages('sjPlot')
-if (!require(sjmisc)) install.packages('sjmisc')
-if (!require(effects)) install.packages('effects')
-if (!require(sjstats)) install.packages('sjstats')
-if (!require(cowplot)) install.packages('cowplot')
-if (!require(ggpubr)) install.packages('ggpubr')
-if (!require(foreign)) install.packages('foreign')
+load('/cloud/project/dataframes/dat.rda')
+load('/cloud/project/dataframes/data.rda')
+load('/cloud/project/dataframes/data_new_HC.rda')
+load('/cloud/project/dataframes/data_prep.rda')
+load('/cloud/project/dataframes/dat.nooutlier.rda')
+load('/cloud/project/dataframes/data_params.rda')
 
-library("ggplot2")
-library("readxl")
-library("tidyverse")
-library("psych")
-library("car")
-library("lme4")
-library("ez")
-library("broom")
-library("strex")
-library("nlme")
-library("lattice")
-library("tinytex")
-library("purrr")
-library("knitr")
-library("kableExtra")
-library("stringr")
-library("hypr")
-library('schoRsch')
-library('hrbrthemes')
-library('emmeans')
-library('psycho')
-library('gghalves')
-library('sjPlot') #for plotting lmer and glmer mods
-library('sjmisc') 
-library('effects')
-library('sjstats') #use for r2 functions
-library('cowplot')
-library("ggpubr")
-library("foreign")
+load('/cloud/project/dataframes/data_physio_long.rda')
+load('/cloud/project/dataframes/data_physio_clean.rda')
+load('/cloud/project/dataframes/dat_physio_behav.rda')
+load('/cloud/project/dataframes/data_physio_behav.rda')
+load('/cloud/project/dataframes/dat_physio_behav_red.rda')
+load('/cloud/project/dataframes/data_physio_behav_red.rda')
+
+load('/cloud/project/dataframes/data_new_HC.rda')
+load('/cloud/project/dataframes/data_prep.rda')
 
 ```
 
+# Aggregated Data Prep
 ```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/data_import.R')
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
+## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr or reshape2)
+#detach("package:reshape2", unload=TRUE)
 source('preps/prep_agg.R')
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
-source('preps/longtowide_agg.R')
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/cort_import.R')
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source("preps/import_singletrial_data.R")
-```
-
-# Cortisol and Behavioral Aggregation 
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FIRST
-source('preps/prep_cortbehav.R')
 
 ```
 

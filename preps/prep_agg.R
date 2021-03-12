@@ -1,7 +1,10 @@
-# this won't run. unless you unload plyr by the next line or manually
-# detach("package:plyr", unload = TRUE)
+library(dplyr)
+################# NECESSARY TO RUN THIS FOR longtowide_agg.R AND LATER RMANOVA ANALYSES ###########
 
-## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES
+# get necessary datasets saved from data_import script
+load('/cloud/project/dataframes/dat.rda')
+load('/cloud/project/dataframes/data.rda')
+
 # prepare data first: p_correct_T1 needs to be turned into p_correct_CT and P_correct_T2 into P_Correct_S for order = 1(A)
 
 # subset data for order (A=CT-ST,B=ST-CT)
@@ -268,3 +271,9 @@ rm(data.order.CTST)
 rm(data.order.STCT)
 rm(data.order.A)
 rm(data.order.B)
+
+save(file='/cloud/project/dataframes/dat_all.rda', dat_all)
+save(file='/cloud/project/dataframes/data_all.rda',data_all)
+
+rm(dat)
+rm(data)
