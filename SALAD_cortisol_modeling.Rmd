@@ -263,6 +263,10 @@ ggplot(data_all, aes(x=group, y=diff_STCT_pre, color=order)) +
 dat_physio_behav$wm_cap <- dicho(dat_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
 dat_physio_behav$wm_cap <-factor(dat_physio_behav$wm_cap, labels=c("low WM", "high WM"))
 
+# dichotomize HC dataset by lifetime stress (PSS)
+dat_physio_behav$lt_stress <- dicho(dat_physio_behav$PSS_Total, dich.by = "median", as.num = TRUE)
+dat_physio_behav$lt_stress <-factor(dat_physio_behav$lt_stress, labels=c("low lifetime stress", "high lifetime stress"))
+
 # transform dat_physio_behav into half long format (by condition)
 # first for aucg variable
 longdat.cond.phys <- melt(dat_physio_behav,
@@ -377,6 +381,10 @@ wm_plot_3
 data_physio_behav_red$wm_cap <- dicho(data_physio_behav_red$num_backward, dich.by = "median", as.num = TRUE)
 data_physio_behav_red$wm_cap <-factor(data_physio_behav_red$wm_cap, labels=c("low WM", "high WM"))
 
+# dichotomize HC dataset by lifetime stress (PSS)
+data_physio_behav_red$lt_stress <- dicho(data_physio_behav_red$PSS_Total, dich.by = "median", as.num = TRUE)
+data_physio_behav_red$lt_stress <-factor(data_physio_behav_red$lt_stress, labels=c("low lifetime stress", "high lifetime stress"))
+
 mean_params <- data_params %>% summarise_if(is.numeric, mean)
 sd_params <- data_params %>% summarise_if(is.numeric, sd)
 
@@ -416,28 +424,28 @@ data_physio_behav_red <- data_physio_behav_red  %>% mutate(bet_ST_loss = abs(bet
 data_physio_behav_red <- data_physio_behav_red  %>% mutate(bet_ST_win = abs(bet_win) + abs(sc_bet_win))
 
 # plots for modeling params of DU_scaling_bothCond (winning model with different betas for ST vs. CT) and p_correct
-mod_pcorrect_plot_1 <- ggscatter(data_physio_behav_red, x = "bet_win", y = "diff_STCT",
+mod_pcorrect_plot_1 <- ggscatter(na.omit(data_physio_behav_red), x = "bet_win", y = "diff_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Win", ylab = "Difference ST-CT")
+          xlab = "Beta Win", ylab = "Difference ST-CT") + facet_wrap("lt_stress")
 mod_pcorrect_plot_1
 
-mod_pcorrect_plot_2 <- ggscatter(data_physio_behav_red, x = "bet_loss", y = "diff_STCT",
+mod_pcorrect_plot_2 <- ggscatter(na.omit(data_physio_behav_red), x = "bet_loss", y = "diff_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Loss", ylab = "Difference ST-CT")
+          xlab = "Beta Loss", ylab = "Difference ST-CT") + facet_wrap("lt_stress")
 mod_pcorrect_plot_2
 
-mod_pcorrect_plot_3 <- ggscatter(data_physio_behav_red, x = "sc_bet_win", y = "diff_STCT",
+mod_pcorrect_plot_3 <- ggscatter(na.omit(data_physio_behav_red), x = "sc_bet_win", y = "diff_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Scaling Beta Win", ylab = "Difference ST-CT")
+          xlab = "Scaling Beta Win", ylab = "Difference ST-CT") + facet_wrap("lt_stress")
 mod_pcorrect_plot_3
 
-mod_pcorrect_plot_4 <- ggscatter(data_physio_behav_red, x = "sc_bet_loss", y = "diff_STCT",
+mod_pcorrect_plot_4 <- ggscatter(na.omit(data_physio_behav_red), x = "sc_bet_loss", y = "diff_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Scaling Beta Loss", ylab = "Difference ST-CT")
+          xlab = "Scaling Beta Loss", ylab = "Difference ST-CT") + facet_wrap("lt_stress")
 mod_pcorrect_plot_4
 
 # scaling beta + beta = ST correlated with p_correct ST; just beta correlated with p_correct CT
