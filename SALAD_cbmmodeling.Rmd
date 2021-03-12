@@ -114,7 +114,6 @@ ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/committe
 ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/committee_plots")
 
 
-
 df <- read.table(text = "Species  Zone1   Zone2   Zone3   Zone4
 cf       0.0045  0.040   0.054    0.089
 cx       0.12    0.145   0.098    0.095
