@@ -8,7 +8,7 @@ clear
 close all
 
 %%%%%%%%%%%%
-cond = 1; % adapt here for CT = 1 and ST = 2
+cond = 2; % adapt here for CT = 1 and ST = 2
 
 if cond == 2
 data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/ST/';
@@ -16,7 +16,7 @@ else
 data_path         = '/Users/larawieland/Documents/Promotion/SALAD_3/data_raw/sample1_operant/CT/';
 end
 
-save_path = '/Users/larawieland/Documents/Promotion/SALAD_3/hierarchical';
+save_path = 
 
 data =  dir([data_path '*.mat']);
 %%%%%%%%%%%%%%
@@ -104,8 +104,11 @@ singletrialstable = [subname,singletrialstable];
 % singletrialstable.Properties.RowNames = sub_name;
 
 if cond == 1
-writetable(singletrialstable,fullfile(save_path,'SALAD_CT_TransOp_singletrials_wRT_cond_S.csv'),'WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_CT_TransOp_singletrials_wRT_cond_S.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 elseif cond == 2 
-writetable(singletrialstable,fullfile(save_path,'SALAD_ST_TransOp_singletrials_wRT_cond_S.csv'),'WriteRowNames',true, 'Delimiter', 'comma') 
+writetable(singletrialstable,'SALAD_ST_TransOp_singletrials_wRT_cond_S.csv','WriteRowNames',true, 'Delimiter', 'comma') 
 end
+
+ 
+
 
