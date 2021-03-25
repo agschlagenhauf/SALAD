@@ -1,0 +1,127 @@
+
+<!-- saved from url=(0085)https://06b9bac119cd488389413c1d77742b29.app.rstudio.cloud/session/filef934a38b7.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<style>
+html, body { background-color: white; }
+table { border-collapse:collapse; border:none; }
+caption { font-weight: bold; text-align:left; }
+td {  }
+.thead { border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm; }
+.tdata { padding:0.2cm; text-align:left; vertical-align:top; }
+.arc { background-color:#f2f2f2; }
+.summary { padding-top:0.1cm; padding-bottom:0.1cm; }
+.summarydata { text-align:left; }
+.fixedparts { font-weight:bold; text-align:left; }
+.randomparts { font-weight:bold; text-align:left; padding-top:.8em; }
+.zeroparts { font-weight:bold; text-align:left; padding-top:.8em; }
+.simplexparts { font-weight:bold; text-align:left; padding-top:.8em; }
+.lasttablerow { border-bottom: double; }
+.firsttablerow {  }
+.firstsumrow { border-top:1px solid; }
+.labelcellborder { border-bottom:1px solid; }
+.depvarhead { text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal; }
+.depvarheadnodv { border-top: double; text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal; }
+.leftalign { text-align:left; }
+.centeralign { text-align:center; }
+.firsttablecol { text-align:left; }
+.footnote { font-style:italic; border-top:double black; text-align:right; }
+.subtitle { font-weight: normal; }
+.modelcolumn1 {  }
+.modelcolumn2 {  }
+.modelcolumn3 {  }
+.modelcolumn4 {  }
+.modelcolumn5 {  }
+.modelcolumn6 {  }
+.modelcolumn7 {  }
+.col1 {  }
+.col2 {  }
+.col3 {  }
+.col4 {  }
+.col5 {  }
+.col6 {  }
+</style>
+</head>
+<body>
+<table>
+  <tbody><tr>
+    <th class="thead firsttablerow firsttablecol col1">&nbsp;</th>
+    <th colspan="3" class="thead firsttablerow">Correct</th>
+  </tr>
+  <tr>
+    <td class="depvarhead firsttablerow firsttablecol col1">Predictors</td>
+    <td class="depvarhead firsttablerow col2">Odds Ratios</td>
+    <td class="depvarhead firsttablerow col3">CI</td>
+    <td class="depvarhead firsttablerow col4">p</td>
+  </tr>
+  <tr>
+    <td class="tdata firsttablecol col1">Intercept</td>
+    <td class="tdata centeralign modelcolumn1 col2">3.24</td>
+    <td class="tdata centeralign modelcolumn1 col3">2.79&nbsp;–&nbsp;3.77</td>
+    <td class="tdata centeralign modelcolumn1 col4"><strong>&lt;0.001</strong></td>
+</tr>
+  <tr>
+    <td class="tdata firsttablecol col1">AUC Cortisol (Stress)</td>
+    <td class="tdata centeralign modelcolumn1 col2">1.10</td>
+    <td class="tdata centeralign modelcolumn1 col3">1.02&nbsp;–&nbsp;1.19</td>
+    <td class="tdata centeralign modelcolumn1 col4"><strong>0.014</strong></td>
+</tr>
+  <tr>
+    <td class="tdata firsttablecol col1">Reversal Phase</td>
+    <td class="tdata centeralign modelcolumn1 col2">2.52</td>
+    <td class="tdata centeralign modelcolumn1 col3">2.21&nbsp;–&nbsp;2.87</td>
+    <td class="tdata centeralign modelcolumn1 col4"><strong>&lt;0.001</strong></td>
+</tr>
+  <tr>
+    <td class="tdata firsttablecol col1">Stable Phase</td>
+    <td class="tdata centeralign modelcolumn1 col2">2.19</td>
+    <td class="tdata centeralign modelcolumn1 col3">1.88&nbsp;–&nbsp;2.55</td>
+    <td class="tdata centeralign modelcolumn1 col4"><strong>&lt;0.001</strong></td>
+</tr>
+  <tr>
+    <td colspan="4" class="randomparts">Random Effects</td>
+  </tr>
+
+  <tr>
+    <td class="tdata leftalign summary">σ<sup>2</sup></td>
+    <td class="tdata summary summarydata" colspan="3">3.29</td>
+
+  </tr><tr>
+    <td class="tdata leftalign summary">τ<sub>00</sub> <sub>sub_idx</sub></td>
+    <td class="tdata summary summarydata" colspan="3">0.12</td>
+
+  </tr><tr>
+    <td class="tdata leftalign summary">ICC</td>
+    <td class="tdata summary summarydata" colspan="3">0.04</td>
+
+  </tr><tr>
+    <td class="tdata leftalign summary">N <sub>sub_idx</sub></td>
+    <td class="tdata summary summarydata" colspan="3">24</td>
+  </tr><tr>
+    <td class="tdata leftalign summary firstsumrow">Observations</td>
+    <td class="tdata summary summarydata firstsumrow" colspan="3">7627</td>
+  </tr>
+  <tr>
+    <td class="tdata leftalign summary">Marginal R<sup>2</sup> / Conditional R<sup>2</sup></td>
+    <td class="tdata summary summarydata" colspan="3">0.052 / 0.085</td>
+  </tr>
+
+</tbody></table>
+
+
+<script>mendeleyWebImporter = {
+  downloadPdfs(t) { return this._call('downloadPdfs', [t]); },
+  open() { return this._call('open', []); },
+  _call(methodName, methodArgs) {
+    const id = Math.random();
+    window.postMessage({ id, token: '0.6392985502683022', methodName, methodArgs }, 'https://06b9bac119cd488389413c1d77742b29.app.rstudio.cloud');
+    return new Promise(resolve => {
+      const listener = window.addEventListener('message', event => {
+        const data = event.data;
+        if (typeof data !== 'object' || !('result' in data) || data.id !== id) return;
+        window.removeEventListener('message', listener);
+        resolve(data.result);
+      });
+    });
+  }
+};</script></body></html>
