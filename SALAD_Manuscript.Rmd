@@ -116,7 +116,6 @@ A comprehensive model space including single-update (1), double-update (2), and 
 
 ```{r stress induction, include=T, echo=F,results = 'hide', error=FALSE, warning=FALSE}
 
-# ADAPT HERE
 data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
 #data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
 
@@ -125,7 +124,7 @@ se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
 time_means <- data_physio_long.HC %>%
     group_by(variable_name,time,condition) %>%
-    summarize(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
+    summarise(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
 
 # TSST effect
 tsst_plot <- 
@@ -145,8 +144,9 @@ tsst_plot <-
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
-   
 tsst_plot
+
+ggsave(tsst_plot, filename = "perc_wstay_HC.png","jpg", "/cloud/project/plots/committee_plots")
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)

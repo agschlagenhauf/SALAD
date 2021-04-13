@@ -10,7 +10,7 @@ extrac_file <- "data_sum/operant_sample1.csv"
 extrac_file_1 <- "data_sum/operant_sample1_modeling.csv"
 extrac_file_2 <- "data_sum/operant_sample1_diffstay.csv"
 
-param_file <- "data_sum/SALAD_bothCond_scaling_DU_tr.csv"
+param_file <- "data_sum/SALAD_bothCond_scaling_DU_tr_subj_loglik.csv"
 
 # import data, set missings (999) to NA and turn into tibble
 dat_imported <- read_csv2(extrac_file_2,na = c("999", "NA"))

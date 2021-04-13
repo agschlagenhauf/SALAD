@@ -9,29 +9,39 @@ library(foreign)
 ################### NECESSARY TO RUN FOR SALAD_cortisol_modeling (Cortisol Analyses) ###################
 
 cort_file <- "data_sum/SPSS/Longitudinal_cortisol_ALL_Okt2016.sav"
-time_cort_file <- "data_sum/zeitablauf_selection.csv"
+time_file <- "data_sum/zeitablauf_selection_long.csv"
 
 # import cortisol data 
 cort_data <- read.spss(cort_file, use.value.label=TRUE, to.data.frame=TRUE)
-
-# import individual time points of cortisol data, there are no NA (but how would one deal with those?)
-data_time_cort <-  read_csv(time_cort_file)
-
-date_string = '11:30 AM'
-format = '%I:%M %p'
-my_date = datetime.strptime(date_string, format)
-my_date.strftime(format)
-
-T1 <- strptime(data_time_cort$T1, format = "%H:%M:%S %p")
-format(T1, "%H:%M:%S")
 
 # clean unnecessary columns from physio data
 data_physio_clean = subset(cort_data, select = -c(sjn,VpNr_numeric,VpOrder,filter_.,operant_inclusion, operant_excl_reason,OPERA0,OPERA1,OPERA2,Comments,COMME0,COMME1,COMME2) )
 #data_physio_clean <- na.omit(data_physio_clean)
 
+# import individual time points of cortisol data, there are no NA (but how would one deal with those?)
+data_time <-  read_csv(time_file)
+
+# merge time selection dataset with cort dataset (both in long format)
+
+data_cort_time <- merge.data.frame(data_time,data_physio_clean,by=c('VpNr','condition'),all=TRUE)
+
+# time intervals in our study design: t2-t1:28 min, t3-t2: 12 min, t4-t3: 5 min, t5-t4: 15 min, t6-t5: 15 min
+data_physio_clean$aucg <- ((data_physio_clean$t2_cort+data_physio_clean$t1_cort)*28)/2 + ((data_physio_clean$t3_cort + data_physio_clean$t2_cort)*12)/2 + ((data_physio_clean$t4_cort + data_physio_clean$t3_cort)*5)/2 + ((data_physio_clean$t5_cort + data_physio_clean$t4_cort)*15)/2 + ((data_physio_clean$t6_cort + data_physio_clean$t5_cort)*15)/2
+
+data_physio_clean$indivaucg <- ((data_physio_clean$t2_cort+data_physio_clean$t1_cort)*difftime(data_cort_time$T2,data_cort_time$T1,units='mins'))/2 + ((data_physio_clean$t3_cort + data_physio_clean$t2_cort)*difftime(data_cort_time$T3,data_cort_time$T2,units='mins'))/2 + ((data_physio_clean$t4_cort + data_physio_clean$t3_cort)*difftime(data_cort_time$T4,data_cort_time$T3,units='mins'))/2 + ((data_physio_clean$t5_cort + data_physio_clean$t4_cort)*difftime(data_cort_time$T5,data_cort_time$T4,units='mins'))/2 + ((data_physio_clean$t6_cort + data_physio_clean$t5_cort)*difftime(data_cort_time$T6,data_cort_time$T5,units='mins'))/2
+
+data_physio_clean$indivaucg <- as.numeric(data_physio_clean$indivaucg)
+
+#replace missing indivaucg for 4 subjects with generic aucg
+idx <- is.na(data_physio_clean$indivaucg)
+data_physio_clean$aucg[idx==TRUE]
+ 
+data_physio_clean$indivaucg[idx==TRUE] <- data_physio_clean$aucg[idx==TRUE]
+#data_physio_clean$aucg[data_physio_clean$indivaucg==NA] 
+
 #################### Calculate Cortisol Peaks and AUC Ground (aucg) = calculated according to Pruessner (2003) formula: 
 
-# time intervals in our study design: t1-t2:28 min, t2-t3: 12 min, t3-t4: 5 min, t4-t5: 15 min, t5-t6: 15 min
+# time intervals in our study design: t2-t1:28 min, t3-t2: 12 min, t4-t3: 5 min, t5-t4: 15 min, t6-t5: 15 min
 
 data_physio_clean$aucg <- ((data_physio_clean$t2_cort+data_physio_clean$t1_cort)*28)/2 + ((data_physio_clean$t3_cort + data_physio_clean$t2_cort)*12)/2 + ((data_physio_clean$t4_cort + data_physio_clean$t3_cort)*5)/2 + ((data_physio_clean$t5_cort + data_physio_clean$t4_cort)*15)/2 + ((data_physio_clean$t6_cort + data_physio_clean$t5_cort)*15)/2
 data_physio_clean$aucg_amyl <- ((data_physio_clean$t2_amyl+data_physio_clean$t1_amyl)*28)/2 + ((data_physio_clean$t3_amyl + data_physio_clean$t2_amyl)*12)/2 + ((data_physio_clean$t4_amyl + data_physio_clean$t3_amyl)*5)/2 + ((data_physio_clean$t5_amyl + data_physio_clean$t4_amyl)*15)/2 + ((data_physio_clean$t6_amyl + data_physio_clean$t5_amyl)*15)/2
@@ -55,8 +65,8 @@ data_physio_wide <- dcast(melted,  VpNr ~ variable + condition)
 save(file='/cloud/project/dataframes/data_physio_clean.rda',data_physio_clean)
 save(file='/cloud/project/dataframes/data_physio_wide.rda',data_physio_wide)
 
-rm(data_time_cort)
 rm(data_physio_clean)
+rm(data_cort_time)
 rm(data_physio_wide)
 rm(melted)
 rm(cort_data)
