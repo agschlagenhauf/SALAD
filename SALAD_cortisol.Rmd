@@ -35,6 +35,7 @@ if (!require(ggpubr)) install.packages("ggpubr")
 library("ggplot2")
 library("lme4")
 library("ggpubr")
+library("ggpubr")
 
 ```
 
@@ -48,6 +49,7 @@ load('/cloud/project/dataframes/dat_physio_behav.rda')
 load('/cloud/project/dataframes/data_physio_behav.rda')
 load('/cloud/project/dataframes/dat_physio_behav_red.rda')
 load('/cloud/project/dataframes/data_physio_behav_red.rda')
+load('/cloud/project/dataframes/data_vas_long.rda')
 
 ```
 
@@ -110,6 +112,88 @@ tsst_plot <-
 tsst_plot
 
 ggsave(tsst_plot, filename = "perc_wstay_HC.png","jpg", "/cloud/project/plots/committee_plots")
+
+# same plot for all three VAS scales
+
+time_means_vas <- data_vas_long %>%
+    group_by(vas,time,condition,marker) %>%
+    summarise(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
+time_means_vas$condition <- factor(time_means_vas$condition)
+
+levels(time_means_vas$condition) <- c("Control", "Stress")
+
+
+time_means_vas$condition <- factor(time_means_vas$condition, levels = c("control","stress"))
+
+time_means_vas.arousal <- time_means_vas %>% filter(marker == "arousal")
+time_means_vas.valence <- time_means_vas %>% filter(marker == "valence")
+time_means_vas.stress <- time_means_vas %>% filter(marker == "stress")
+
+# for arousal
+vas1_plot <- 
+  ggplot(time_means_vas.arousal, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0, 7)) +
+  #scale_y_continuous(limits=c(0,11)) +
+  scale_y_continuous(limits=c(0,100)) +
+  # annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  # annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Subjective Arousal") +
+   labs(title = 'Subjective arousal over the course of experimental session',
+        subtitle = 'Clear effect of stress condition',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+vas1_plot
+
+ggsave(vas1_plot, filename = "vas1_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+# for valence
+vas2_plot <- 
+  ggplot(time_means_vas.valence, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0, 7)) +
+  #scale_y_continuous(limits=c(0,11)) +
+  scale_y_continuous(limits=c(0,100)) +
+  # annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  # annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Subjective Valence") +
+   labs(title = 'Subjective valence over the course of experimental session',
+        subtitle = 'Clear effect of stress condition',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+vas2_plot
+
+ggsave(vas2_plot, filename = "vas2_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+# for stress
+vas3_plot <- 
+  ggplot(time_means_vas.stress, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0, 7)) +
+  #scale_y_continuous(limits=c(0,11)) +
+  scale_y_continuous(limits=c(0,100)) +
+  # annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  # annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Subjective Stress") +
+   labs(title = 'Subjective stress over the course of experimental session',
+        subtitle = 'Clear effect of stress condition',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic"))
+   theme_classic()
+vas3_plot
+
+ggsave(vas3_plot, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
