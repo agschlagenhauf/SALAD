@@ -87,7 +87,7 @@ se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
 time_means <- data_physio_long.HC %>%
     group_by(variable_name,time,condition) %>%
-    summarize(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
+    summarise(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
 
 # TSST effect
 tsst_plot <- 
@@ -125,6 +125,9 @@ auc.T1cort.ttest <- stats::t.test(dat_physio_behav$t1_cort_control, dat_physio_b
 # Lennart's paper: Of the 34 participants, 6 (18%) showed a cortisol response of < 1.5 nmol/l (Miller et al., 2013) and were therefore considered non-responders. 
 # Should we do this as well (and if so with T4-T2, there is no info on the time points in Lennart's paper) or no need with our analysis approach of AUC?
 # in our study: that would be 4 participants but how to go on then? Lennart did all behavioral analyses separately with responders but had a larger sample to start with
+
+# p_correct single trial analysis without those 4 non-responders - change?
+# post both results (w/wo non-responder) in chat with Claudia
 
 dat_physio_behav <- dat_physio_behav %>% rowwise() %>% mutate(cort_response_stress=t4_cort_stress-t2_cort_stress)
 
@@ -202,6 +205,8 @@ physio_plot4
 ## Exploratory Analyses: WM-Median Split - Cortisol - Performance (inspired by Otto,2013)
 ```{r}
 
+require("reshape2")
+
 # dichotomize HC dataset by WM capacity (num_backward)
 data_physio_behav$wm_cap <- dicho(data_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
 data_physio_behav$wm_cap <-factor(data_physio_behav$wm_cap, labels=c("low WM", "high WM"))
@@ -214,13 +219,26 @@ data_physio_behav$lt_stress <-factor(data_physio_behav$lt_stress, labels=c("low 
 # first for aucg variable
 longdat.cond.phys <- melt(data_physio_behav,
         # ID variables - all the variables to keep but not split apart on
-    id.vars=c("sub_id","wm_cap"),
+    id.vars=c("sub_id"),
         # The source columns
     measure.vars=c("aucg_control","aucg_stress"),
         # Name of the destination column that will identify the original
         # column that the measurement came from
     variable.name="cond",
     value.name="aucg"
+)
+
+# transform dat_physio_behav into half long format (by condition)
+# first for aucg variable
+longdat.cond.phys1 <- melt(data_physio_behav,
+        # ID variables - all the variables to keep but not split apart on
+    id.vars=c("sub_id","wm_cap"),
+        # The source columns
+    measure.vars=c("indivaucg_control","indivaucg_stress"),
+        # Name of the destination column that will identify the original
+        # column that the measurement came from
+    variable.name="cond",
+    value.name="indivaucg"
 )
 
 # then for z.peak_cort variable
@@ -248,37 +266,39 @@ longdat.cond.correct <- melt(data_physio_behav,
 )
 
 # extract string ST or CT from phase strings and turn it into logical, then numeric
-longdat.cond.correct <- longdat.cond.correct %>% mutate(cond = grepl("*CT",longdat.cond.correct$cond)) 
-longdat.cond.correct <- longdat.cond.correct %>% mutate(cond2 = longdat.cond.correct$cond*1)
-longdat.cond.correct$cond2<-factor(longdat.cond.correct$cond2, labels=c("stress", "control"))
+# longdat.cond.correct <- longdat.cond.correct %>% mutate(cond = grepl("*CT",longdat.cond.correct$cond)) 
+# longdat.cond.correct <- longdat.cond.correct %>% mutate(cond2 = longdat.cond.correct$cond*1)
+longdat.cond.correct$just_cond <-factor(longdat.cond.correct$cond, labels=c("stress", "control"))
 
-library(plyr)
+#library(plyr)
 
 # the following steps prepare both longdats (either longdat.cond.phys = aucg or longdat.cond.phys2 = zpeak) for the merge with longdat.cond.correct
-longdat.cond.phys$cond2 <- plyr::revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
-longdat.cond.phys2$cond2 <- plyr::revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
+longdat.cond.phys$just_cond <- plyr::revalue(longdat.cond.phys$cond, c("aucg_control" = "control","aucg_stress"="stress"))
+longdat.cond.phys1$just_cond <- plyr::revalue(longdat.cond.phys1$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
+longdat.cond.phys2$just_cond <- plyr::revalue(longdat.cond.phys2$cond, c("z.peak_cort_control" = "control","z.peak_cort_stress"="stress"))
 
 longdat.cond.phys$sub_id <- factor(longdat.cond.phys$sub_id)
+longdat.cond.phys1$sub_id <- factor(longdat.cond.phys1$sub_id)
 longdat.cond.phys2$sub_id <- factor(longdat.cond.phys2$sub_id)
 
 longdat.cond.correct$sub_id <- factor(longdat.cond.correct$sub_id)
 
-longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id", "cond2","wm_cap"))
-longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "cond2","wm_cap"))
+longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id","just_cond"))
+longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "just_cond","wm_cap"))
 
 # plots correct performance onto cortisol stress level in both conditions
 wm_plot <- 
-  ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~cond2)
+  ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~just_cond)
 wm_plot
 
 # like Otto Fig 4, low and high WM span subjects separate for p_correct
-wm_plot_1 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
+wm_plot_1 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "just_cond",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
 wm_plot_1
 
-wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
+wm_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "just_cond",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "AUC (Cortisol Stress Response)", ylab = "Percentage of correct responses") + facet_wrap("wm_cap")
@@ -287,16 +307,16 @@ wm_plot_2
 
 # plots correct performance onto cortisol stress level (aucg) separately in both conditions (2*28 data points)
 cond_aucg_plot <- 
-  ggplot(longdat.cond.both, aes(aucg,p_correct)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
+  ggplot(longdat.cond.both, aes(aucg,p_correct)) + geom_point() + geom_smooth(aes(group = just_cond), method = "lm", se = FALSE) + facet_wrap(~just_cond)
 cond_aucg_plot
 
 # plots correct performance onto cortisol stress level (zpeak) separately in both conditions (2*28 data points)
 cond_peak_plot <- 
-  ggplot(longdat.cond.both2, aes(p_correct, z.peak)) + geom_point() + geom_smooth(aes(group = cond2), method = "lm", se = FALSE) + facet_wrap(~cond2)
+  ggplot(longdat.cond.both2, aes(p_correct, z.peak)) + geom_point() + geom_smooth(aes(group = just_cond), method = "lm", se = FALSE) + facet_wrap(~just_cond)
 cond_peak_plot
 
 # plots correct performance onto cortisol stress level in both conditions but one plot (56 data points)
-cond_aucg_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "cond2",
+cond_aucg_plot_2 <- ggscatter(longdat.cond.both, x = "aucg", y = "p_correct", color = "just_cond",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "AUCG", ylab = "Percentage of correct responses")

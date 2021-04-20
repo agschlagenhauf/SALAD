@@ -250,7 +250,7 @@ sjPlot::tab_model(mod2.HC.cond.RT,
                   pred.labels = c("Intercept","Condition Effect","Reversal Phase","Stable Phase","Condition*Reversal","Condition*Stable"))
 
 # I am not clear on why the axis labels are not in proper order but this is the only way it actually works and matches the figure
-sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Condition*Stable","Condition*Reversal","Reversal Phase","Stable Phase","Cortisol Effect"))
+sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Cortisol*Stable","Cortisol*Reversal","Reversal Phase","Stable Phase","Cortisol Effect"))
 
 ``` 
 

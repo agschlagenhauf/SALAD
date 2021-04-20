@@ -26,7 +26,8 @@ data_all_reduced$sub_id <- str_remove(data_all_reduced$sub_id, "[_]")
 dat_physio_behav <- merge(data_physio_wide, dat_all_reduced, by = "sub_id", all.y = TRUE)
 data_physio_behav <- merge(data_physio_wide, data_all_reduced, by = "sub_id", all.y = TRUE)
 
-#CHANGE HERE
+# CHANGE HERE
+# not ideal, needs to be adapted
 #dat_physio_behav <- merge(data_physio_wide, dat_all_reduced, by = "sub_id", all.y = TRUE)
 dat_physio_behav[,6:68] <- sapply(dat_physio_behav[,6:68],as.numeric)
 data_physio_behav[,6:77] <- sapply(data_physio_behav[,6:77],as.numeric)
@@ -45,8 +46,16 @@ data_physio_behav_red =subset(data_physio_behav, select =-c(Gruppe_control,Grupp
 dat_physio_behav_red <- tibble::rowid_to_column(dat_physio_behav_red, "sub_idx")
 data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx")
 
-# UNCOMMENT THE FOLLOWING FOR NOT REMOVING 1B_057 (missing aucg_stress value)
-data_physio_behav_red <- data_physio_behav_red[-c(28),]
+# UNCOMMENT THE FOLLOWING FOR NOT REMOVING 28-1B_057 (missing aucg_stress value), 17-1B015, 25-1B052, 28-1B056 (cortisol-nonresponder)
+data_physio_behav_red <- data_physio_behav_red[-c(17,25,27,28),]
+
+################# PREPARE BEHAV DATASETS AND MERGE WITH PHYSIO + SINGLETRIALS (both HC and AD)
+
+data_new_HC <- merge(data_new_HC, data_all, by = c("sub_id", "sub_idx"))
+
+# here a final version of AUD sample is needed to decide based on sub_id which subjects should be part of single trial analyses
+# dat_all <- tibble::rowid_to_column(dat_all, "sub_idx")
+# data_new <- merge(data_prep_both, dat_all)
 
 ################# PREPARE PHYSIO DATASETS AND MERGE WITH SINGLE TRIALS (only HC)
 # the following is not very elegant and could be done easier with one merge
@@ -104,21 +113,14 @@ longdat.physbehav1$sub_idx <- factor(longdat.physbehav1$sub_idx)
 longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
 longdat.physbehav3$sub_idx <- factor(longdat.physbehav3$sub_idx)
 
+data_prep$sub_id <- str_remove(data_prep$sub_id, "[_]")
+
 ## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg_cort or zpeak_cort or zpeak_amyl)
-data_new_HC <- data_prep %>% right_join(longdat.physbehav1, by=c("sub_idx","Cond"))
-#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_idx","Cond"))
-#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_idx","Cond"))
+data_new_HC <- data_prep %>% right_join(longdat.physbehav1, by=c("sub_id","sub_idx","Cond"))
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav2, by=c("sub_id","sub_idx","Cond"))
+#data_new_HC <- data_prep.HC %>% right_join(longdat.physbehav3, by=c("sub_id","sub_idx","Cond"))
 
 data_new_HC$Cond <- factor(data_new_HC$Cond)
-
-################# PREPARE BEHAV DATASETS AND MERGE WITH PHYSIO + SINGLETRIALS (both HC and AD)
-
-data_all <- tibble::rowid_to_column(data_all, "sub_idx")
-data_new_HC <- merge(data_prep, data_all)
-
-# here a final version of AUD sample is needed to decide based on sub_id which subjects should be part of single trial analyses
-# dat_all <- tibble::rowid_to_column(dat_all, "sub_idx")
-# data_new <- merge(data_prep_both, dat_all)
 
 # now save necessary scripts for hierarchical analyses
 # save(file='/cloud/project/dataframes/data_new.rda',data_new)

@@ -7,7 +7,7 @@ library(lme4)
 # CHANGE HERE depending on analyses on HC sample 1 only (singtrial_file) or both groups
 # adapt path to data you want to import, sing_trial_file_HC for HC only: including Cond (1 = CT, 2 = ST), Outcome (1=Reward, 0= No reward), Choice_t (which card was chosen), 
 # Correct (1=card chosen which would be rewarded in this state), winstay, loseshift, RT and S (indicates same underlying task state: e.g. 1-55: 0,56-71: 1, 72-92: 0)
-sing_trial_file_HC <- "hierarchical/operant_sample1_singtrial_wC_wo1A001_wRT_cond_wS.csv"
+sing_trial_file_HC <- "hierarchical/operant_sample1_singtrial_wC_wo1A001_wRT_cond_wS_wsubid.csv"
 sing_trial_file_both <- "hierarchical/operant_sample1_singtrial_wC_both.csv"
 
 data_strials <- read.csv(sing_trial_file_HC, header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE, )
