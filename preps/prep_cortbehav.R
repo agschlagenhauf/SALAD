@@ -29,6 +29,16 @@ dat_physio_behav <- merge(data_physio_wide, dat_all_reduced, by = "sub_id", all.
 data_physio_behav <- merge(data_physio_wide, data_all_reduced, by = "sub_id", all.y = TRUE)
 data_behav_vas <- merge(dat.vas, data_all_reduced, by = "sub_id", all.y = TRUE)
 
+# time intervals in our study design: t2-t1:28 min, t3-t2: 12 min, t4-t3: 5 min, t5-t4: 15 min, t6-t5: 15 min
+data_behav_vas$aucgvas1ct <- ((data_behav_vas$vas1_t2_ctrl+data_behav_vas$vas1_t1_ctrl)*28)/2 + ((data_behav_vas$vas1_t3_ctrl + data_behav_vas$vas1_t2_ctrl)*12)/2 + ((data_behav_vas$vas1_t4_ctrl + data_behav_vas$vas1_t3_ctrl)*5)/2 + ((data_behav_vas$vas1_t5_ctrl + data_behav_vas$vas1_t4_ctrl)*15)/2 + ((data_behav_vas$vas1_t6_ctrl + data_behav_vas$vas1_t5_ctrl)*15)/2
+data_behav_vas$aucgvas2ct <- ((data_behav_vas$vas2_t2_ctrl+data_behav_vas$vas2_t1_ctrl)*28)/2 + ((data_behav_vas$vas2_t3_ctrl + data_behav_vas$vas2_t2_ctrl)*12)/2 + ((data_behav_vas$vas2_t4_ctrl + data_behav_vas$vas2_t3_ctrl)*5)/2 + ((data_behav_vas$vas2_t5_ctrl + data_behav_vas$vas2_t4_ctrl)*15)/2 + ((data_behav_vas$vas2_t6_ctrl + data_behav_vas$vas2_t5_ctrl)*15)/2
+data_behav_vas$aucgvas3ct <- ((data_behav_vas$vas3_t2_ctrl+data_behav_vas$vas3_t1_ctrl)*28)/2 + ((data_behav_vas$vas3_t3_ctrl + data_behav_vas$vas3_t2_ctrl)*12)/2 + ((data_behav_vas$vas3_t4_ctrl + data_behav_vas$vas3_t3_ctrl)*5)/2 + ((data_behav_vas$vas3_t5_ctrl + data_behav_vas$vas3_t4_ctrl)*15)/2 + ((data_behav_vas$vas3_t6_ctrl + data_behav_vas$vas3_t5_ctrl)*15)/2
+
+data_behav_vas$aucgvas1st <- ((data_behav_vas$vas1_t2_str+data_behav_vas$vas1_t1_str)*28)/2 + ((data_behav_vas$vas1_t3_str + data_behav_vas$vas1_t2_str)*12)/2 + ((data_behav_vas$vas1_t4_str + data_behav_vas$vas1_t3_str)*5)/2 + ((data_behav_vas$vas1_t5_str + data_behav_vas$vas1_t4_str)*15)/2 + ((data_behav_vas$vas1_t6_str + data_behav_vas$vas1_t5_str)*15)/2
+data_behav_vas$aucgvas2st <- ((data_behav_vas$vas2_t2_str+data_behav_vas$vas2_t1_str)*28)/2 + ((data_behav_vas$vas2_t3_str + data_behav_vas$vas2_t2_str)*12)/2 + ((data_behav_vas$vas2_t4_str + data_behav_vas$vas2_t3_str)*5)/2 + ((data_behav_vas$vas2_t5_str + data_behav_vas$vas2_t4_str)*15)/2 + ((data_behav_vas$vas2_t6_str + data_behav_vas$vas2_t5_str)*15)/2
+data_behav_vas$aucgvas3st <- ((data_behav_vas$vas3_t2_str+data_behav_vas$vas3_t1_str)*28)/2 + ((data_behav_vas$vas3_t3_str + data_behav_vas$vas3_t2_str)*12)/2 + ((data_behav_vas$vas3_t4_str + data_behav_vas$vas3_t3_str)*5)/2 + ((data_behav_vas$vas3_t5_str + data_behav_vas$vas3_t4_str)*15)/2 + ((data_behav_vas$vas3_t6_str + data_behav_vas$vas3_t5_str)*15)/2
+
+
 # CHANGE HERE
 # not ideal, needs to be adapted
 #dat_physio_behav <- merge(data_physio_wide, dat_all_reduced, by = "sub_id", all.y = TRUE)
@@ -52,6 +62,7 @@ data_vas_long$time <-rep(c(1:6),each=num*3,times=2)
 data_vas_long <- data_vas_long %>% arrange(sub_id)
 data_vas_long$marker <- rep(c("arousal","valence","stress"),times=num*2)
 data_vas_long$marker <- factor(data_vas_long$marker)
+
 
 # reduce combined dataset to most relevant parts
 dat_physio_behav_red =subset(dat_physio_behav, select =-c(Gruppe_control,Gruppe_stress,day_order_control,day_order_stress,excluded,t1_cort_control,t2_cort_control,t3_cort_control,t4_cort_control,t5_cort_control,t6_cort_control,t1_amyl_control,t2_amyl_control,t3_amyl_control,t4_amyl_control,t5_amyl_control,t6_amyl_control,t1_cort_stress,t2_cort_stress,t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,t1_amyl_stress,t2_amyl_stress,t3_amyl_stress,t4_amyl_stress,t5_amyl_stress,t6_amyl_stress,p_stay_CT,p_switch_CT,p_win_stay_CT,p_win_switch_CT,p_lose_stay_CT,p_lose_switch_CT,p_stay_ST,p_switch_ST,p_win_stay_ST,p_win_switch_ST,p_lose_stay_ST,p_lose_switch_ST))
@@ -148,6 +159,8 @@ save(file='/cloud/project/dataframes/data_physio_behav.rda',data_physio_behav)
 save(file='/cloud/project/dataframes/dat_physio_behav_red.rda',dat_physio_behav_red)
 save(file='/cloud/project/dataframes/data_physio_behav_red.rda',data_physio_behav_red)
 save(file='/cloud/project/dataframes/data_vas_long.rda',data_vas_long)
+save(file='/cloud/project/dataframes/data_behav_vas.rda',data_behav_vas)
+
 
 rm(dat.vas)
 rm(data_behav_vas)

@@ -17,6 +17,7 @@ rm(list = ls())
 
 if (!require(ggplot2)) install.packages("ggplot2")
 if (!require(lme4)) install.packages("lme4")
+if (!require(hypr)) install.packages('hypr')
 if (!require(corrplot)) install.packages("corrplot")
 if (!require(PerformanceAnalytics)) install.packages("PerformanceAnalytics")
 if (!require(kableExtra)) install.packages('kableExtra')
@@ -25,10 +26,12 @@ if (!require(gghalves)) install.packages('gghalves')
 if (!require(parameters)) install.packages("parameters")
 if (!require(insight)) install.packages("insight")
 if (!require(broom.mixed)) install.packages("broom.mixed")
+if (!require(bibtex)) install.packages("bibtex")
 
 
 library("ggplot2")
 library("lme4")
+library("hypr") # for setting up contrasts
 library("corrplot")
 library("PerformanceAnalytics")
 library("kableExtra")
@@ -37,6 +40,11 @@ library("gghalves")
 library("parameters") # nice PDF-friendly formatting of glm results
 library("insight")
 library("broom.mixed")
+library("bibtex")
+
+write.bib(c('lme4','hypr'), file = "SALADpackages.bib", append = FALSE, verbose = TRUE)
+
+
 
 ```
 
@@ -265,14 +273,14 @@ mod0.HC.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 mod1.HC.correct <- glmer(Correct~aucg_scaled+volat+(1|sub_idx), data=data_new_HC,family=binomial)
 mod2.HC.correct <- glmer(Correct~aucg_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
-anova(mod0.HC.correct, mod0a.HC.correct,mod1.HC.correct,mod2.HC.correct)
+anova(mod0.HC.correct,mod1.HC.correct,mod2.HC.correct)
 
 mod0.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
 #mod0a.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC,family=binomial)
 mod1.HC.cond.correct <- glmer(Correct~Cond+volat+(1|sub_idx), data=data_new_HC,family=binomial)
 mod2.HC.cond.correct <- glmer(Correct~Cond*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
-anova(mod0.HC.cond.correct, mod0a.HC.cond.correct,mod1.HC.cond.correct,mod2.HC.cond.correct)
+anova(mod0.HC.cond.correct, mod1.HC.cond.correct,mod2.HC.cond.correct)
 
 ```
 

@@ -24,12 +24,14 @@ df$revstate <- factor(df$revstate)
 
 # aggregate
 dfsens <- df %>% group_by(sub_id,revstate,Cond,reversal) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
-dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
 
 # make wide along first/last variable in order to have 4 observations/subj
 dfsenswide <- dfsens %>% dcast(sub_id + reversal + Cond ~ revstate)
 
 dfsenswide$sensidx <- dfsenswide$'1' - dfsenswide$'2'
+
+
+dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
 
 dfsenswidefirst <- dfsenswide %>% filter(reversal == "first")
 dfsenswidelast <- dfsenswide %>% filter(reversal == "last")
@@ -52,13 +54,13 @@ revsensplot
 
 # scatter plot for sensitivity index (first or last) with cortisol AUC 
 
-senscortplotfirst <- ggscatter(dfsenscort, x = "aucg", y = "revidx_first", color = "wm_cap",
+senscortplotfirst <- ggscatter(dfsenscort, x = "aucg", y = "revidx_first",
                               add = "reg.line", conf.int = TRUE, 
                               cor.coef = TRUE, cor.method = "pearson",
                               xlab = "AUCG", ylab = "Reversal Sensitivity Index (first)")
 senscortplotfirst
 
-senscortplotlast <- ggscatter(dfsenscort, x = "aucg", y = "revidx_last", color = "wm_cap",
+senscortplotlast <- ggscatter(dfsenscort, x = "aucg", y = "revidx_last",
                           add = "reg.line", conf.int = TRUE, 
                           cor.coef = TRUE, cor.method = "pearson",
                           xlab = "AUCG", ylab = "Reversal Sensitivity Index (last)")
