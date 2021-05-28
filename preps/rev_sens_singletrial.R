@@ -44,7 +44,7 @@ dfsenswideboth <- dfsenswideboth %>% rename(just_cond="Cond")
 
 dfsenswideboth$sub_id <- str_remove(dfsenswideboth$sub_id, "[_]")
 
-dfsenscort <- merge.data.frame(longdat.cond.both,dfsenswideboth, by = c("just_cond","sub_id"))
+dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("just_cond","sub_id"))
 
 # preparation for plot, calculate trialwise mean of correct choice across subject
 dfagg <- df %>% group_by(Trial_idx,Cond,revidx,reversal) %>% summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 

@@ -83,11 +83,12 @@ hist(data_physio_clean$t6_amyl)
 hist(data_physio_clean$peak_amyl)
 ```
 
-## Physiological stress response (according to Luettgau, 2013)
+## Physiological stress response (according to Luettgau, 2013): for cortisol and amylase
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
-#data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
+#CHANGE HERE for cortisol or amylase plot
+#data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
+data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
 
 # Claudia's function se that calculates the standard errors
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
@@ -96,27 +97,43 @@ time_means <- data_physio_long.HC %>%
     group_by(variable_name,time,condition) %>%
     summarise(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
 
+
 # TSST effect
-tsst_plot <- 
+
+cort_plot <- 
   ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
   geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
-  scale_color_manual(values = c("#00BFC4", "#F8766D")) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
-  #scale_y_continuous(limits=c(0,11)) +
-  scale_y_continuous(limits=c(100,350)) +
-  # annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
-  # annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
-  annotate("rect", xmin = 2.2, xmax = 3, ymin = 100, ymax = 350, fill="turquoise", alpha = .2) +
-  annotate("rect", xmin = 4, xmax = 5, ymin = 100, ymax = 350, fill="darkgrey", alpha = .2) +
-   xlab("Time Point") + ylab("Amylase activity in saliva in U/ml") +
-   labs(title = 'Alpha-amylase stress response over the course of experimental session',
-        subtitle = 'Clear effect of stress condition',
+  scale_y_continuous(limits=c(0,11)) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Cortisol activity in saliva in U/ml") +
+   labs(title = 'Cortisol stress response over the course of experimental session',
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
-tsst_plot
+cort_plot
 
-ggsave(tsst_plot, filename = "perc_wstay_HC.png","jpg", "/cloud/project/plots/committee_plots")
+ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/committee_plots")
+
+# amyl_plot <- 
+#   ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+#   geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+#   scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
+#   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
+#   scale_y_continuous(limits=c(100,350)) +
+#   annotate("rect", xmin = 2.2, xmax = 3, ymin = 100, ymax = 350, fill="turquoise", alpha = .2) +
+#   annotate("rect", xmin = 4, xmax = 5, ymin = 100, ymax = 350, fill="darkgrey", alpha = .2) +
+#    xlab("Time Point") + ylab("Amylase activity in saliva in U/ml") +
+#    labs(title = 'Alpha-amylase stress response over the course of experimental session',
+#         subtitle = 'Clear effect of stress condition',
+#         col = "Condition") + 
+#    theme(plot.title = element_text(face = "italic"))
+#    theme_classic()
+# amyl_plot
+# 
+# ggsave(amyl_plot, filename = "amyl_plot.png","jpg", "/cloud/project/plots/committee_plots")
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
