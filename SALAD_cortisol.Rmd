@@ -137,6 +137,8 @@ ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/commit
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
+auc.cort.ttest <- data_physio_behav_red %>% t_test(aucg_control ~ aucg_stress, paired = TRUE)
+
 auc.amyl.ttest <- stats::t.test(data_physio_behav_red$aucg_amyl_control, data_physio_behav_red$aucg_amyl_stress, paired = TRUE)
 
 # paired ttest for pre-stress cortisol between ST and CT: no significant difference

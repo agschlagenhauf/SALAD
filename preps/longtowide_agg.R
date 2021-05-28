@@ -5,6 +5,37 @@ library(strex)
 ################# ALL DATA FOR BEHAVIORAL/AGGREGATED ANALYSES PREPARED HERE ###########
 ################# Transfer wide to long for p_correct #################
 
+
+## transfer from wide to long format p_correct, reclassify variables, prepare for stats
+# transfer them to long format as preparation for rmANOVA
+
+longdat.cond.correct <- melt(dat_all,
+                        # ID variables - all the variables to keep but not split apart on
+                        id.vars=c("sub_id", "group","order","age","school_yrs"),
+                        # The source columns
+                        measure.vars=c("p_correct_ST","p_correct_CT"),
+                        # Name of the destination column that will identify the original
+                        # column that the measurement came from
+                        variable.name="cond",
+                        value.name="p_correct"
+)
+
+
+longdat.cond.correct$p_correct <- as.numeric(longdat.cond.correct$p_correct)
+
+
+longdat.cond.correct <- longdat.cond.correct %>% mutate(cond = grepl("*CT",longdat.cond.correct$cond)) 
+longdat.cond.correct <- longdat.cond.correct %>% mutate(cond2 = (longdat.cond.correct$cond*-1)+1) %>% rename(cond = longdat.cond.correct$cond2)
+
+longdat.cond.correct$group <- as.factor(longdat.cond.correct$group) 
+levels(longdat.cond.correct$group) <- c('HC', 'AD')
+
+longdat.cond.correct$cond <- as.factor(longdat.cond.correct$cond) 
+levels(longdat.cond.correct$cond) <- c('Stress', 'Control')
+
+longdat.cond.HC.correct <- longdat.cond.correct %>% filter(longdat.cond.correct$group == 'HC')
+
+
 ## transfer from wide to long format p_correct, reclassify variables, prepare for stats
 # transfer them to long format as preparation for rmANOVA
 
