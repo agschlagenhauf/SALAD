@@ -466,7 +466,7 @@ f5_pcorrect_cond <- ggplot(data = longdat.cond.HC.correct, aes(y = p_correct)) +
    scale_x_continuous(breaks=c(0,1), labels=c("Control","Stress"), limits=c(-0.5,2)) +
    scale_y_continuous(limits=c(0.5,1)) +
    xlab("Condition") + ylab("Percentage of correct responses") +
-   labs(title = 'Correct responses in raw data', caption='Datapoints are jittered') + 
+   labs(title = 'Correct responses in raw data') + 
     theme(
         panel.grid.major = element_line(colour = "#b7d8db"),
         panel.background = element_rect(fill = "transparent",colour = NA),
