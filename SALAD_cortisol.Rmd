@@ -109,13 +109,13 @@ cort_plot <-
   annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="turquoise", alpha = .2) +
   annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
    xlab("Time Point") + ylab("Cortisol activity in saliva in U/ml") +
-   labs(title = 'Cortisol stress response over the course of experimental session',
+   labs(title = 'Cortisol stress response',
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
 cort_plot
 
-ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/committee_plots")
+ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 # amyl_plot <- 
 #   ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
@@ -175,8 +175,7 @@ vas1_plot <-
   annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
   annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
    xlab("Time Point") + ylab("Subjective Arousal") +
-   labs(title = 'Subjective arousal over the course of experimental session',
-        subtitle = 'Clear effect of stress condition',
+   labs(title = 'Subjective arousal',
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
@@ -197,8 +196,7 @@ vas2_plot <-
   annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
   annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
    xlab("Time Point") + ylab("Subjective Valence") +
-   labs(title = 'Subjective valence over the course of experimental session',
-        subtitle = 'Clear effect of stress condition',
+   labs(title = 'Subjective valence',
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
@@ -219,14 +217,18 @@ vas3_plot <-
   annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 100, fill="turquoise", alpha = .2) +
   annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 100, fill="darkgrey", alpha = .2) +
    xlab("Time Point") + ylab("Subjective Stress") +
-   labs(title = 'Subjective stress over the course of experimental session',
-        subtitle = 'Clear effect of stress condition',
+   labs(title = 'Subjective stress',
         col = "Condition") + 
    theme(plot.title = element_text(face = "italic"))
    theme_classic()
 vas3_plot
 
 ggsave(vas3_plot, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+f2_results <- ggarrange(vas1_plot, vas2_plot, vas3_plot, cort_plot,
+                    labels = c("A", "B", "C","D"),
+                    ncol = 2, nrow = 2)
+f2_results
 
 # testing statistical significance of subjective stress response ST vs. CT
 
