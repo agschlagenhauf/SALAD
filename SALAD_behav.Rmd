@@ -30,6 +30,7 @@ knitr::opts_chunk$set(fig.width=15, fig.height=8, fig.path='Figs/')
 rm(list = ls()) 
 
 if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(ggpubr)) install.packages("ggpubr")
 if (!require(tidyverse)) install.packages("tidyverse")
 if (!require(psych)) install.packages("psych")
 if (!require(car)) install.packages("car")
@@ -41,8 +42,13 @@ if (!require(strex)) install.packages("strex")
 if (!require(nlme)) install.packages("nlme")
 if (!require(lattice)) install.packages("lattice")
 if (!require(tinytex)) install.packages('tinytex')
+if (!require(reshape2)) install.packages('reshape2')
+if (!require(sjmisc)) install.packages('sjmisc')
+
+
 
 library("ggplot2")
+library("ggpubr")
 library("tidyverse")
 library("psych")
 library("car")
@@ -54,6 +60,7 @@ library("strex")
 library("nlme")
 library("lattice")
 library("tinytex")
+library("sjmisc")
 
 ```
 
@@ -544,38 +551,87 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 data_all[,6:65] <- sapply(data_all[,6:65],as.numeric)
 
 # calculate the difference between individual values (ST-CT) for single phases and all
-data_all <- mutate(data_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-data_all <- mutate(data_all,m_diff_STCT_pre = mean(diff_STCT_pre))
+data_all <- mutate(data_all, delta_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_all <- mutate(data_all,m_delta_STCT_pre = mean(delta_STCT_pre))
 
-data_all <- mutate(data_all, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-data_all <- mutate(data_all,m_diff_STCT_rev = mean(diff_STCT_rev))
+data_all <- mutate(data_all, delta_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_all <- mutate(data_all,m_delta_STCT_rev = mean(delta_STCT_rev))
 
-data_all <- mutate(data_all, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-data_all <- mutate(data_all,m_diff_STCT_post = mean(diff_STCT_post))
+data_all <- mutate(data_all, delta_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_all <- mutate(data_all,m_delta_STCT_post = mean(delta_STCT_post))
 
-data_all <- mutate(data_all, diff_STCT = p_correct_ST - p_correct_CT)
-data_all <- mutate(data_all,m_diff_STCT = mean(diff_STCT))
+data_all <- mutate(data_all, delta_STCT = p_correct_ST - p_correct_CT)
+data_all <- mutate(data_all,m_delta_STCT = mean(delta_STCT))
 
 data_all$group <- as.factor(data_all$group)
 data_all$order <- as.factor(data_all$order)
 
-plot.interindiv.diff.order <- ggplot(data_all, aes(x=group, y=diff_STCT, color = order)) + 
+plot.interindiv.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) +
-   xlab("Group") + ylab("Differences between ST and CT Condition") 
-plot.interindiv.diff.order
+   xlab("Group") + ylab("deltaerences between ST and CT Condition") 
+plot.interindiv.delta
 
-ggplot(data_all, aes(x=group, y=diff_STCT_pre)) + 
+ggplot(data_all, aes(x=group, y=delta_STCT_pre)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) 
 
-ggplot(data_all, aes(x=group, y=diff_STCT_post)) + 
+ggplot(data_all, aes(x=group, y=delta_STCT_post)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) 
 
-ggplot(data_all, aes(x=group, y=diff_STCT_pre, color=order)) + 
+ggplot(data_all, aes(x=group, y=delta_STCT_pre, color=order)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0))
+
+# dichotomize HC dataset by learning under stress (delta of ST-CT)
+data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
+
+
+longdat.data_all <- melt(data_all,
+                           # ID variables - all the variables to keep but not split apart on
+                           id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","delta_STCT"),
+                           # The source columns
+                           measure.vars=c("p_correct_ST","p_correct_CT"),
+                           # Name of the destination column that will identify the original
+                           # column that the measurement came from
+                           variable.name="cond",
+                           value.name="p_correct"
+)
+
+longdat.data_all$cond <- factor(longdat.data_all$cond, levels=rev(levels(longdat.data_all$cond)))
+
+barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.3,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Correct responses in raw data',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+   theme(axis.text.x = element_blank()) 
+barplot.pcorrect
+
+boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT, color=delta_STCT)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
+   xlab("Group") + ylab("∆ correct responses (ST-CT)") +
+   labs(title = 'Interindividual differences in correct responses',  x = "", color = "Stress") +
+    theme(
+        panel.grid.major = element_line(colour = "#b7d8db"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   scale_color_gradient(low = "#ffdb58", high = "forestgreen")
+boxplot.delta
+
+
+f3_results <- ggarrange(barplot.pcorrect, boxplot.delta,
+                    labels = c("A", "B"),
+                    ncol = 2, nrow = 1)
+f3_results
+
+ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
 
 ```
 
