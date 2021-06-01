@@ -230,6 +230,9 @@ f2_results <- ggarrange(vas1_plot, vas2_plot, vas3_plot, cort_plot,
                     ncol = 2, nrow = 2)
 f2_results
 
+ggsave(f2_results, filename = "f2_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+
 # testing statistical significance of subjective stress response ST vs. CT
 
 vas1.ttest <- stats::t.test(data_behav_vas$aucgvas1ct, data_behav_vas$aucgvas1st, paired = TRUE)
