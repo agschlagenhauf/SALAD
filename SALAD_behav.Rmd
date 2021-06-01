@@ -608,20 +608,22 @@ barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct",
    xlab("Condition") + ylab("Percentage of correct responses") +
    labs(title = 'Correct responses in raw data',  x = "", color = "Condition") +
    scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
-   theme(axis.text.x = element_blank()) 
+   theme(axis.text.x = element_blank()) +
+   scale_y_continuous(expand = c(0,0)) 
 barplot.pcorrect
 
 boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT, color=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
    xlab("Group") + ylab("∆ correct responses (ST-CT)") +
-   labs(title = 'Interindividual differences in correct responses',  x = "", color = "Stress") +
+   labs(title = 'Interindividual differences in correct responses',  x = "", color = "Impact of Stress") +
     theme(
-        panel.grid.major = element_line(colour = "#b7d8db"),
+        panel.grid.major = element_line(colour = "darkgrey"),
         panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = 'white'),
         ) +
-   scale_color_gradient(low = "#ffdb58", high = "forestgreen")
+   scale_color_gradient(low = "black", high = "#009E73") +
+   theme(axis.text.x = element_blank()) 
 boxplot.delta
 
 
