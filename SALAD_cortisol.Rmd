@@ -31,11 +31,16 @@ rm(list = ls())
 if (!require(ggplot2)) install.packages("ggplot2")
 if (!require(lme4)) install.packages("lme4")
 if (!require(ggpubr)) install.packages("ggpubr")
+if (!require(patchwork)) install.packages("patchwork")
+if (!require(cowplot)) install.packages("cowplot")
 
 library("ggplot2")
 library("lme4")
 library("ggpubr")
-library("ggpubr")
+library("patchwork")
+library("cowplot")
+
+
 
 ```
 
@@ -223,14 +228,16 @@ vas3_plot <-
    theme_classic()
 vas3_plot
 
-ggsave(vas3_plot, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(vas3_plot, width = 3, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 f2_results <- ggarrange(vas1_plot, vas2_plot, vas3_plot, cort_plot,
                     labels = c("A", "B", "C","D"),
                     ncol = 2, nrow = 2)
 f2_results
 
-ggsave(f2_results, filename = "f2_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(f2_results, filename = "f2_results.png","jpg",width = 15, height = 10, "/cloud/project/plots/manuscript_plots")
+
+#f2_results <- plot_grid(vas1_plot, vas2_plot, vas3_plot,cort_plot, ncol=2,nrow=2, labels = "AUTO", label_size = 12)
 
 
 # testing statistical significance of subjective stress response ST vs. CT

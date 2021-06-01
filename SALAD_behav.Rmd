@@ -616,7 +616,7 @@ boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT, color=delta_STCT)) 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
    xlab("Group") + ylab("∆ correct responses (ST-CT)") +
-   labs(title = 'Interindividual differences in correct responses',  x = "", color = "Impact of Stress") +
+   labs(title = 'Interindividual differences',  x = "", color = "Impact of Stress") +
     theme(
         panel.grid.major = element_line(colour = "darkgrey"),
         panel.background = element_rect(fill = "transparent",colour = NA),
