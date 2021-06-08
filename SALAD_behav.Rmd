@@ -566,11 +566,36 @@ data_all <- mutate(data_all,m_delta_STCT = mean(delta_STCT))
 data_all$group <- as.factor(data_all$group)
 data_all$order <- as.factor(data_all$order)
 
+#load('/cloud/project/dataframes/data.voi.rda')
+
+# turn it into wide format by condition
+melted <- melt(dat.voi, id.vars= c("sub_id", "cond"))
+widedat.voi <- dcast(melted,  sub_id ~ variable + cond)
+
+widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
+
+
 plot.interindiv.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) +
-   xlab("Group") + ylab("deltaerences between ST and CT Condition") 
+   xlab("Group") + ylab("Differences between ST and CT Condition") 
 plot.interindiv.delta
+
+plot.wm.delta  <- ggscatter(widedat.data.voi, x = "num_backward", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Working Memory", ylab = "∆ correct responses (ST-CT)") 
+plot.wm.delta
+
+plot.bis.delta  <- ggscatter(widedat.data.voi, x = "BIS_total", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Impulsivity", ylab = "∆ correct responses (ST-CT)") 
+plot.bis.delta
+
+plot.pss.delta  <- ggscatter(widedat.data.voi, x = "PSS_Total", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Chronic Stress", ylab = "∆ correct responses (ST-CT)") 
+plot.pss.delta
+
 
 ggplot(data_all, aes(x=group, y=delta_STCT_pre)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
@@ -600,6 +625,45 @@ longdat.data_all <- melt(data_all,
 )
 
 longdat.data_all$cond <- factor(longdat.data_all$cond, levels=rev(levels(longdat.data_all$cond)))
+
+dat.voi$cond <- factor(dat.voi$cond)
+longdat.data_all$cond <- plyr::revalue(longdat.data_all$cond , c("p_correct_CT" = "CT","p_correct_ST"="ST"))
+
+longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond"))
+
+# P_correct and VOI conditions separate
+
+voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "p_correct", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation ventral striatum", ylab = "Correct responses") + facet_wrap("cond")
+voi_plot_1
+
+voi_plot_2 <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "p_correct", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Correct responses") + facet_wrap("cond")
+voi_plot_2
+
+# Modeling + VOI
+
+voi_plot_3a <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_win", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
+voi_plot_3a
+
+voi_plot_3b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_bet_win", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
+voi_plot_3b
+
+voi_plot_4a <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_loss", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Loss") + facet_wrap("cond")
+voi_plot_4a
+
+voi_plot_4b <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_loss", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Loss") + facet_wrap("cond")
+voi_plot_4b
 
 barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct", 
           add = c("mean_se", "jitter"),
@@ -638,3 +702,9 @@ ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manu
 ```
 
 
+## fMRI (VOI) and behavioral (p_correct)
+```{r}
+
+
+
+```

@@ -15,12 +15,17 @@ param_file <- "data_sum/SALAD_bothCond_scaling_DU_tr_subj_loglik.csv"
 
 spss_file <- "data_sum/SPSS/SALAD_Data.sav"
 
+voi_file <- "fmri/fmri_VOIvals.csv"
+
 
 # import data, set missings (999) to NA and turn into tibble
 dat_imported <- read_csv2(extrac_file_2,na = c("999", "NA"))
 data_imported <- read.csv(extrac_file_1, header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE)
 dat <- as_tibble(dat_imported)
 data <- as_tibble(data_imported)
+
+dat_voi <- read.csv(voi_file,header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE)
+dat.voi <- as_tibble(dat_voi)
 
 # import only modeling params
 data_params <-  read_csv(param_file,na = c("NA"))
@@ -46,6 +51,7 @@ save(file='/cloud/project/dataframes/data.rda',data)
 save(file='/cloud/project/dataframes/data_params.rda', data_params)
 save(file='/cloud/project/dataframes/dat.nooutlier.rda',dat.nooutlier)
 save(file='/cloud/project/dataframes/dat.vas.rda',dat.vas)
+save(file='/cloud/project/dataframes/dat.voi.rda',dat.voi)
 
 
 rm(dat_imported)
@@ -54,6 +60,7 @@ rm(dat)
 rm(data)
 rm(data_params)
 rm(dat.nooutlier)
-rm(dat_spss_clean)
 rm(dat.vas)
 rm(dat.vas.raw)
+rm(dat_voi)
+rm(dat.voi)
