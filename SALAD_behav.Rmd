@@ -703,7 +703,7 @@ variable.name="cond",
 value.name="p_correct"
 )
 
-longdat.data_all$cond <- factor(longdat.data_all$cond, levels=rev(levels(longdat.data_all$cond)))
+longdat.data_all$cond <- factor(longdat.data_all$cond,levels=rev(levels(longdat.data_all$cond)))
 
 dat.voi$cond <- factor(dat.voi$cond)
 longdat.data_all$cond <- plyr::revalue(longdat.data_all$cond , c("p_correct_CT" = "CT","p_correct_ST"="ST"))
