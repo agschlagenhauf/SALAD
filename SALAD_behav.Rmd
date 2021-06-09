@@ -545,7 +545,7 @@ ggplot(longdat.RT, aes(x = volat,y = p_RT, col = cond)) + stat_summary(fun = mea
 
 ```
 
-## Plots of intraindividual differences
+## Preparing plots of intraindividual differences: make data_all wide + add VOIs
 ```{r}
 # for whatever reason dat_all is not numeric so make it numeric first
 data_all[,6:65] <- sapply(data_all[,6:65],as.numeric)
@@ -577,39 +577,104 @@ widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
 widedat.data.voi <- mutate(widedat.data.voi, delta_Vstr = meanact_Vstr_ST - meanact_Vstr_CT)
 widedat.data.voi <- mutate(widedat.data.voi, delta_nacc = meanact_nacc_ST - meanact_nacc_CT)
 
+```
+
+
+## Plots of delta p_correct and delta VOI
+```{r}
+plot.vstr.delta  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
+plot.vstr.delta
+
+ggsave(plot.vstr.delta, filename = "plot.vstr.delta","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.nacc.delta  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation  (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
+plot.nacc.delta
+
+ggsave(plot.nacc.delta, filename = "plot.nacc.delta","jpg", "/cloud/project/plots/meeting_plots")
+
+```
+
+
+## Plots of scaling and VOI
+```{r}
+plot.vstr.scalingw  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling Win") 
+plot.vstr.scalingw
+
+ggsave(plot.vstr.scalingw, filename = "plot.vstr.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.vstr.scalingl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling Loss") 
+plot.vstr.scalingl
+
+ggsave(plot.vstr.scalingl, filename = "plot.vstr.scalingl","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.nacc.scalingw  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling Win") 
+plot.nacc.scalingw
+
+ggsave(plot.nacc.scalingw, filename = "plot.nacc.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.nacc.scalingl  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling Loss") 
+plot.nacc.scalingl
+
+ggsave(plot.nacc.scalingl, filename = "plot.nacc.scalingl","jpg", "/cloud/project/plots/meeting_plots")
+
+```
+
+
+
+## Plots of deltas (beta+scaling and VOI)
+```{r}
+
+
+plot.vstr.scalbetw  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_bet_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling + Beta Win") 
+plot.vstr.scalbetw
+
+ggsave(plot.vstr.scalbetw, filename = "plot.vstr.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.vstr.scalbetl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_bet_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling + Beta Loss") 
+plot.vstr.scalbetl
+
+ggsave(plot.vstr.scalbetl, filename = "plot.vstr.scalingl","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.nacc.scalbetw  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_bet_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling + Beta Win") 
+plot.nacc.scalbetw
+
+ggsave(plot.nacc.scalbetw, filename = "plot.nacc.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.nacc.scalbetl  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_bet_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling + Beta Loss") 
+plot.nacc.scalbetl
+
+ggsave(plot.nacc.scalbetl, filename = "plot.nacc.scalingl","jpg", "/cloud/project/plots/meeting_plots")
+
+```
+
+## Plots of deltas (p_correct and vOI)
+```{r}
 
 plot.interindiv.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) +
    xlab("Group") + ylab("Differences between ST and CT Condition") 
 plot.interindiv.delta
-
-plot.wm.delta  <- ggscatter(widedat.data.voi, x = "num_backward", y = "delta_STCT",
-          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Working Memory", ylab = "∆ correct responses (ST-CT)") 
-plot.wm.delta
-
-plot.bis.delta  <- ggscatter(widedat.data.voi, x = "BIS_total", y = "delta_STCT",
-          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Impulsivity", ylab = "∆ correct responses (ST-CT)") 
-plot.bis.delta
-
-plot.pss.delta  <- ggscatter(widedat.data.voi, x = "PSS_Total", y = "delta_STCT",
-          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Chronic Stress", ylab = "∆ correct responses (ST-CT)") 
-plot.pss.delta
-
-plot.vstr.delta  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "delta_STCT",
-          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "∆ correct responses (ST-CT)") 
-plot.vstr.delta
-
-plot.nacc.delta  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "delta_STCT",
-          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "∆ correct responses (ST-CT)") 
-plot.nacc.delta
-
-
 
 ggplot(data_all, aes(x=group, y=delta_STCT_pre)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
@@ -626,6 +691,10 @@ ggplot(data_all, aes(x=group, y=delta_STCT_pre, color=order)) +
 # dichotomize HC dataset by learning under stress (delta of ST-CT)
 data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
 
+```
+
+## Prepare plots with conditionwise separation (e.g. p_correct_CT with VOI_CT)
+```{r}
 
 longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_Vstr","delta_nacc"),
                            # The source columns
@@ -641,6 +710,11 @@ longdat.data_all$cond <- plyr::revalue(longdat.data_all$cond , c("p_correct_CT" 
 
 longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond"))
 
+
+```
+
+## Plots with conditionwise separation (e.g. p_correct_CT with VOI_CT)
+```{r}
 # P_correct and VOI conditions separate
 
 voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "p_correct", color = "cond",
@@ -658,12 +732,16 @@ voi_plot_2
 voi_plot_3a <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_win", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
-voi_plot_3a
+voi_plot_3
+
+ggsave(voi_plot_3a, filename = "f3a_results.png","jpg", "/cloud/project/plots/committee_plots")
 
 voi_plot_3b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_bet_win", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
 voi_plot_3b
+
+ggsave(voi_plot_3b, filename = "f3a_results.png","jpg", "/cloud/project/plots/committee_plots")
 
 voi_plot_4a <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_loss", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
@@ -711,9 +789,3 @@ ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manu
 ```
 
 
-## fMRI (VOI) and behavioral (p_correct)
-```{r}
-
-
-
-```

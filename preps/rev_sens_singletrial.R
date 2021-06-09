@@ -6,6 +6,7 @@ library('dplyr')
 library('ggplot2')
 
 load('/cloud/project/dataframes/data_prep.rda')
+load('/cloud/project/dataframes/longdat.cond.both.rda')
 
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
@@ -60,22 +61,34 @@ senscortplotfirst <- ggscatter(dfsenscort, x = "aucg", y = "revidx_first",
                               xlab = "AUCG", ylab = "Reversal Sensitivity Index (first)")
 senscortplotfirst
 
+ggsave(senscortplotfirst, filename = "senscortplotfirst","jpg", "/cloud/project/plots/meeting_plots")
+
 senscortplotlast <- ggscatter(dfsenscort, x = "aucg", y = "revidx_last",
                           add = "reg.line", conf.int = TRUE, 
                           cor.coef = TRUE, cor.method = "pearson",
                           xlab = "AUCG", ylab = "Reversal Sensitivity Index (last)")
 senscortplotlast
 
+ggsave(senscortplotlast, filename = "senscortplotlast","jpg", "/cloud/project/plots/meeting_plots")
+
+
 # and bar plot 
-revsensbar <- ggplot(dfsenswideagg,aes(x=Cond, y = mean)) + geom_bar(stat='identity') + geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE),width=.2) + facet_wrap(.~reversal)
+revsensbar <- ggplot(dfsenswideagg,aes(x=Cond, y = mean, color = Cond)) + 
+              geom_bar(stat='identity',alpha=0.2,width=0.4) + 
+              geom_errorbar(aes(ymin=mean-SE, ymax=mean+SE),width=.2) + 
+              facet_wrap(.~reversal) + 
+              xlab("Condition") + ylab("Reversal Sensitivity Index") +
+              scale_color_manual(values = c("#00BFC4", "#F8766D"))
 revsensbar
+
+#ggsave(revsensbar, filename = "revsensbar","jpg", "/cloud/project/plots/meeting_plots")
+
 
 meandifffirst.ttest <- t.test(data=dfsenswidefirst, sensidx ~ Cond, paired = TRUE)
 meandifflast.ttest <- t.test(data=dfsenswidelast, sensidx ~ Cond, paired = TRUE)
 
 rm(dfsens)
-rm(dfsensagg)
 rm(dfsenswide)
-rm(dfsenswideagg)
+#rm(dfsenswideagg)
 rm(dfsenswidefirst)
 rm(dfsenswidelast)

@@ -421,6 +421,9 @@ longdat.cond.correct$sub_id <- factor(longdat.cond.correct$sub_id)
 longdat.cond.both <- merge.data.frame(longdat.cond.phys,longdat.cond.correct, by = c("sub_id","just_cond"))
 longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, by = c("sub_id", "just_cond","wm_cap"))
 
+save(file='/cloud/project/dataframes/longdat.cond.both.rda',longdat.cond.both)
+
+
 # plots correct performance onto cortisol stress level in both conditions
 wm_plot <- 
   ggplot(longdat.cond.both, aes(aucg,p_correct, color = wm_cap)) + geom_point() + geom_smooth(aes(group = wm_cap), method = "lm", se = FALSE) + facet_wrap(~just_cond)
