@@ -574,6 +574,9 @@ widedat.voi <- dcast(melted,  sub_id ~ variable + cond)
 
 widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
 
+widedat.data.voi <- mutate(widedat.data.voi, delta_Vstr = meanact_Vstr_ST - meanact_Vstr_CT)
+widedat.data.voi <- mutate(widedat.data.voi, delta_nacc = meanact_nacc_ST - meanact_nacc_CT)
+
 
 plot.interindiv.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
@@ -596,6 +599,17 @@ plot.pss.delta  <- ggscatter(widedat.data.voi, x = "PSS_Total", y = "delta_STCT"
           xlab = "Chronic Stress", ylab = "∆ correct responses (ST-CT)") 
 plot.pss.delta
 
+plot.vstr.delta  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "∆ correct responses (ST-CT)") 
+plot.vstr.delta
+
+plot.nacc.delta  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "∆ correct responses (ST-CT)") 
+plot.nacc.delta
+
+
 
 ggplot(data_all, aes(x=group, y=delta_STCT_pre)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
@@ -613,15 +627,11 @@ ggplot(data_all, aes(x=group, y=delta_STCT_pre, color=order)) +
 data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
 
 
-longdat.data_all <- melt(data_all,
-                           # ID variables - all the variables to keep but not split apart on
-                           id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","delta_STCT"),
+longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_Vstr","delta_nacc"),
                            # The source columns
-                           measure.vars=c("p_correct_ST","p_correct_CT"),
-                           # Name of the destination column that will identify the original
-                           # column that the measurement came from
-                           variable.name="cond",
-                           value.name="p_correct"
+measure.vars=c("p_correct_ST","p_correct_CT"),
+variable.name="cond",
+value.name="p_correct"
 )
 
 longdat.data_all$cond <- factor(longdat.data_all$cond, levels=rev(levels(longdat.data_all$cond)))
@@ -655,14 +665,14 @@ voi_plot_3b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_bet_win",
           xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
 voi_plot_3b
 
-voi_plot_4a <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_loss", color = "cond",
+voi_plot_4a <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_loss", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Loss") + facet_wrap("cond")
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Loss") + facet_wrap("cond")
 voi_plot_4a
 
-voi_plot_4b <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_loss", color = "cond",
+voi_plot_4b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_win", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Loss") + facet_wrap("cond")
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Loss") + facet_wrap("cond")
 voi_plot_4b
 
 barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct", 
@@ -676,17 +686,16 @@ barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct",
    scale_y_continuous(expand = c(0,0)) 
 barplot.pcorrect
 
-boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT, color=delta_STCT)) + 
+boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
-   xlab("Group") + ylab("∆ correct responses (ST-CT)") +
-   labs(title = 'Interindividual differences',  x = "", color = "Impact of Stress") +
+   xlab("Group") + ylab("∆ correct responses ST-CT (in %)") +
+   labs(title = 'Interindividual differences',  x = "") +
     theme(
         panel.grid.major = element_line(colour = "darkgrey"),
         panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = 'white'),
         ) +
-   scale_color_gradient(low = "black", high = "#009E73") +
    theme(axis.text.x = element_blank()) 
 boxplot.delta
 
