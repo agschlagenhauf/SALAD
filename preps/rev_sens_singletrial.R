@@ -10,15 +10,15 @@ load('/cloud/project/dataframes/longdat.cond.both.rda')
 
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
-df <- filter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
-
+# df <- filter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
+df <- data_prep
 
 # create index if first or second reversal
-df$reversal <- 'Last Reversal'
-df$reversal[df$Trial_idx>=50 & df$Trial_idx<=60] <- 'First Reversal'
-df$reversal[df$Trial_idx>=65 & df$Trial_idx<=75] <- 'Second Reversal'
-df$reversal[df$Trial_idx>=85 & df$Trial_idx<=95] <- 'Third Reversal'
-df$reversal[df$Trial_idx>=100 & df$Trial_idx<=110] <- 'Fourth Reversal'
+# df$reversal <- 'Last Reversal'
+# df$reversal[df$Trial_idx>=50 & df$Trial_idx<=60] <- 'First Reversal'
+# df$reversal[df$Trial_idx>=65 & df$Trial_idx<=75] <- 'Second Reversal'
+# df$reversal[df$Trial_idx>=85 & df$Trial_idx<=95] <- 'Third Reversal'
+# df$reversal[df$Trial_idx>=100 & df$Trial_idx<=110] <- 'Fourth Reversal'
 
 
 df$reversal <- factor(df$reversal)
@@ -31,6 +31,31 @@ df$revstate <- factor(df$revstate)
 
 # aggregate
 dfsens <- df %>% group_by(sub_id,revstate,Cond,reversal) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
+dfsens <- df %>% group_by(Trial_idx,Cond) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
+dfsens$stresstrial <- rep(rep(c(1:160)),times=2)
+
+state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
+
+state_rev_2 <- replace(state_rev, state_rev==2, 0)
+
+taskstruc <- plot(state_rev_2,type = "o", col = "black", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
+taskstruc
+
+revsensplot <- ggplot(dfsens,aes(x = stresstrial,y = meandiff,color=Cond))+ 
+  geom_point() + 
+  geom_line() + 
+  #geom_errorbar(aes(ymin=corr-SE, ymax=corr+SE),width=.2) + 
+  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+
+revsensplot
+
+f2_results <- ggarrange(revsensplot, taskstruc,
+                        labels = c("A", "B"),
+                        ncol = 1, nrow = 2)
+f2_results
+
+ggsave(f2_results, filename = "f2_results.png","jpg", "/cloud/project/plots/meeting_plots")
+
 
 # make wide along first/last variable in order to have 4 observations/subj
 dfsenswide <- dfsens %>% dcast(sub_id + reversal + Cond ~ revstate)
