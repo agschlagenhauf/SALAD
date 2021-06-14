@@ -730,15 +730,24 @@ longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond
 ```{r}
 # P_correct and VOI conditions separate
 
+longdat.data.voi$cond <- factor(longdat.data.voi$cond,levels=rev(levels(longdat.data.voi$cond)))
+
+
 voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "p_correct", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation ventral striatum", ylab = "Correct responses") + facet_wrap("cond")
 voi_plot_1
 
+ggsave(voi_plot_1, filename = "voi_plot_1.png","jpg", "/cloud/project/plots/meeting_plots")
+
+
 voi_plot_2 <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "p_correct", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation nucleus accumbens", ylab = "Correct responses") + facet_wrap("cond")
 voi_plot_2
+
+ggsave(voi_plot_2, filename = "voi_plot_2.png","jpg", "/cloud/project/plots/meeting_plots")
+
 
 # Modeling + VOI
 
