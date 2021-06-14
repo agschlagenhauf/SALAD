@@ -37,6 +37,8 @@ if (!require(sjstats)) install.packages('sjstats')
 if (!require(parameters)) install.packages("parameters")
 if (!require(insight)) install.packages("insight")
 if (!require(broom.mixed)) install.packages("broom.mixed")
+if (!require(lmerTest)) install.packages("lmerTest")
+
 
 library("dplyr")
 library("tidyr")
@@ -53,6 +55,8 @@ library('sjstats') #use for r2 functions
 library("parameters") # nice PDF-friendly formatting of glm results
 library("insight")
 library("broom.mixed")
+library("lmerTest")
+
 
 ```
 

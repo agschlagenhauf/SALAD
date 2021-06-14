@@ -10,17 +10,23 @@ load('/cloud/project/dataframes/longdat.cond.both.rda')
 
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
-df <- filter(data_prep,Trial_idx %in% c(51:60,121:130))
+df <- filter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
+
 
 # create index if first or second reversal
 df$reversal <- 'Last Reversal'
 df$reversal[df$Trial_idx>=50 & df$Trial_idx<=60] <- 'First Reversal'
+df$reversal[df$Trial_idx>=65 & df$Trial_idx<=75] <- 'Second Reversal'
+df$reversal[df$Trial_idx>=85 & df$Trial_idx<=95] <- 'Third Reversal'
+df$reversal[df$Trial_idx>=100 & df$Trial_idx<=110] <- 'Fourth Reversal'
+
+
 df$reversal <- factor(df$reversal)
 # index number of trials within reversal
-df$revidx <- rep(c(-5:-1,1:5),times=4*28)
+df$revidx <- rep(c(-5:-1,1:5),times=10*28)
 
 # create binary revstate variable
-df$revstate <- rep(c(1,2),each=5,times=4*28)
+df$revstate <- rep(c(1,2),each=5,times=10*28)
 df$revstate <- factor(df$revstate)
 
 # aggregate
@@ -34,18 +40,23 @@ dfsenswide$sensidx <- dfsenswide$'1' - dfsenswide$'2'
 
 dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
 
-dfsenswidefirst <- dfsenswide %>% filter(reversal == "first")
-dfsenswidelast <- dfsenswide %>% filter(reversal == "last")
+dfsenswidefirst <- dfsenswide %>% filter(reversal == "First Reversal")
+dfsenswidesecond <- dfsenswide %>% filter(reversal == "Second Reversal")
+dfsenswidethird <- dfsenswide %>% filter(reversal == "Third Reversal")
+dfsenswidefourth <- dfsenswide %>% filter(reversal == "Fourth Reversal")
+dfsenswidelast <- dfsenswide %>% filter(reversal == "Last Reversal")
+
 
 # prepare data for merge with physio
-dfsenswideboth <- merge.data.frame(dfsenswidefirst,dfsenswidelast, by = c("Cond","sub_id"))
+dfsenswideboth <- merge.data.frame(dfsenswidefirst,dfsenswidesecond, by = c("Cond","sub_id"))
 dfsenswideboth <- dfsenswideboth %>% rename(revidx_first="sensidx.x")
-dfsenswideboth <- dfsenswideboth %>% rename(revidx_last="sensidx.y")
 dfsenswideboth <- dfsenswideboth %>% rename(just_cond="Cond")
 
 dfsenswideboth$sub_id <- str_remove(dfsenswideboth$sub_id, "[_]")
+longdat.cond.both <- longdat.cond.both %>% rename(Cond = just_cond)
 
-dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("just_cond","sub_id"))
+
+dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("Cond","sub_id"))
 
 # preparation for plot, calculate trialwise mean of correct choice across subject
 dfagg <- df %>% group_by(Trial_idx,Cond,revidx,reversal) %>% summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
@@ -62,7 +73,7 @@ revsensplot <- ggplot(dfagg,aes(x = revidx,y = corr,color=Cond))+
 
 revsensplot
 
-ggsave(revsensplot, filename = "senscortplotfirst","jpg", "/cloud/project/plots/meeting_plots")
+ggsave(revsensplot, filename = "senscortplotall","jpg", "/cloud/project/plots/meeting_plots")
 
 
 # scatter plot for sensitivity index (first or last) with cortisol AUC 
@@ -71,6 +82,12 @@ senscortplotfirst <- ggscatter(dfsenscort, x = "aucg", y = "revidx_first",
                               add = "reg.line", conf.int = TRUE, 
                               cor.coef = TRUE, cor.method = "pearson",
                               xlab = "AUCG", ylab = "Reversal Sensitivity Index (first)")
+senscortplotfirst
+
+senscortplotfirst <- ggscatter(dfsenscort, x = "aucg", y = "revidx_first",
+                               add = "reg.line", conf.int = TRUE, 
+                               cor.coef = TRUE, cor.method = "pearson",
+                               xlab = "AUCG", ylab = "Reversal Sensitivity Index (first)")
 senscortplotfirst
 
 
@@ -94,6 +111,9 @@ revsensbar
 
 
 meandifffirst.ttest <- t.test(data=dfsenswidefirst, sensidx ~ Cond, paired = TRUE)
+meandiffsecond.ttest <- t.test(data=dfsenswidesecond, sensidx ~ Cond, paired = TRUE)
+meandiffthird.ttest <- t.test(data=dfsenswidethird, sensidx ~ Cond, paired = TRUE)
+meandifffourth.ttest <- t.test(data=dfsenswidefourth, sensidx ~ Cond, paired = TRUE)
 meandifflast.ttest <- t.test(data=dfsenswidelast, sensidx ~ Cond, paired = TRUE)
 
 rm(dfsens)

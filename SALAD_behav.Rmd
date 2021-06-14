@@ -691,17 +691,30 @@ ggplot(data_all, aes(x=group, y=delta_STCT_pre, color=order)) +
 # dichotomize HC dataset by learning under stress (delta of ST-CT)
 data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
 
+data_dich_delta <- cbind(data_all$STlearning,data_all$sub_id)
+
+data_dich_delta <- as.data.frame(data_dich_delta)
 ```
 
 ## Prepare plots with conditionwise separation (e.g. p_correct_CT with VOI_CT)
 ```{r}
 
-longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_Vstr","delta_nacc"),
+# by cond
+longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
                            # The source columns
 measure.vars=c("p_correct_ST","p_correct_CT"),
 variable.name="cond",
 value.name="p_correct"
 )
+
+# by phase for delta
+longdat.phase.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("delta_STCT_pre","delta_STCT_rev","delta_STCT_post"),
+variable.name="phase",
+value.name="delta_correct"
+)
+
 
 longdat.data_all$cond <- factor(longdat.data_all$cond,levels=rev(levels(longdat.data_all$cond)))
 
@@ -764,10 +777,26 @@ barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct",
    scale_y_continuous(expand = c(0,0)) 
 barplot.pcorrect
 
+longdat.phase.data_all$phase <- plyr::revalue(longdat.phase.data_all$phase, c("delta_STCT_pre" = "Pre-Reversal","delta_STCT_rev" ="Reversal","delta_STCT_post" ="Post Reversal"))
+
+longdat.correct$volat <- plyr::revalue(longdat.correct$volat, c("pre" = "Pre-Reversal","rev" ="Reversal","post" ="Post Reversal"))
+
+longdat.correct$cond <- factor(longdat.correct$cond,levels=rev(levels(longdat.correct$cond)))
+
+barplot.pcorrect <- ggbarplot(data_all, y = "p_correct", x = "volat",
+          color = "cond", width=0.4,alpha = 1,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Correct responses in raw data',  x = "", color = "Condition") +
+   scale_fill_brewer(palette="BuPu") 
+barplot.pcorrect
+
+          add = c("mean_se", "jitter"),
+
 boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
-   xlab("Group") + ylab("∆ correct responses ST-CT (in %)") +
+   xlab("Group") + ylab("∆ Correct responses Stress - Control (in %)") +
    labs(title = 'Interindividual differences',  x = "") +
     theme(
         panel.grid.major = element_line(colour = "darkgrey"),
@@ -776,6 +805,21 @@ boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) +
         ) +
    theme(axis.text.x = element_blank()) 
 boxplot.delta
+
+boxplot.delta.phase <- ggplot(longdat.phase.data_all, aes (x=phase,y=delta_correct,fill=phase)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
+   xlab("Phase") + ylab("∆ Correct responses Stress - Control (in %)") +
+   labs(title = 'Interindividual learning differences by phase',  x = "") +
+   scale_fill_brewer(palette="BuPu")
+    theme(
+        panel.grid.major = element_line(colour = "darkgrey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) 
+boxplot.delta.phase
+
+ggsave(boxplot.delta.phase, filename = "boxplot.delta.phase.png","jpg", "/cloud/project/plots/meeting_plots")
 
 
 f3_results <- ggarrange(barplot.pcorrect, boxplot.delta,
