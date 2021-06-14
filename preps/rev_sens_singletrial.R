@@ -32,7 +32,10 @@ df$revstate <- factor(df$revstate)
 # aggregate
 dfsens <- df %>% group_by(sub_id,revstate,Cond,reversal) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
 dfsens <- df %>% group_by(Trial_idx,Cond) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
-dfsens$stresstrial <- rep(rep(c(1:160)),times=2)
+dfsens <- dfsens %>% arrange(desc(Cond))
+
+dfsens$stresstrial <- condtrial(c(51:60,66:75,86:95,101:110,121:130))
+ilter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
 
 state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
 
