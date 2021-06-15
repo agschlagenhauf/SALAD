@@ -123,9 +123,9 @@ data_params_long_al
 
 bet_cov_prep <- data_physio_behav %>% select("sub_id","bet_win","bet_loss","sc_bet_win","sc_bet_loss")
 save(file='/cloud/project/dataframes/dat.bet_cov_prep.rda',bet_cov_prep)
-bet_cov_prep <- load('/cloud/project/dataframes/dat.bet_cov_prep.rda')
+bet_cov_dat <- load('/cloud/project/dataframes/dat.bet_cov_prep.rda')
 
-write.csv(get(bet_cov_prep), file='/cloud/project/fmri/dat.bet_cov_prep.csv')
+write.csv(get(bet_cov_dat), file='/cloud/project/fmri/bet_cov_prep.csv')
 
 # make violin plots to show distribution
 p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
