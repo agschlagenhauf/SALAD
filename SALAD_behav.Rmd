@@ -44,6 +44,7 @@ if (!require(lattice)) install.packages("lattice")
 if (!require(tinytex)) install.packages('tinytex')
 if (!require(reshape2)) install.packages('reshape2')
 if (!require(sjmisc)) install.packages('sjmisc')
+if (!require(schoRsch)) install.packages('schoRsch')
 
 
 
@@ -61,6 +62,8 @@ library("nlme")
 library("lattice")
 library("tinytex")
 library("sjmisc")
+library("schoRsch")
+
 
 ```
 
@@ -68,6 +71,8 @@ library("sjmisc")
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST: 
 load('/cloud/project/dataframes/dat.nooutlier.rda')
+load('/cloud/project/dataframes/dat.voi.rda')
+
 
 ```
 
@@ -76,6 +81,8 @@ load('/cloud/project/dataframes/dat.nooutlier.rda')
 ## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr or reshape2)
 #detach("package:reshape2", unload=TRUE)
 source('preps/prep_agg.R')
+source('preps/longtowide_agg.R')
+
 
 ```
 
@@ -133,18 +140,6 @@ t.test(tmt_b ~ group, data=dat_all)
 by(dat_all$dsst, dat_all$group, mean)
 # by(dat_all$dsst, dat_all$group, sd)
 t.test(dsst ~ group, data=dat_all)
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
-source('preps/prep_agg.R')
-
-```
-
-```{r, include=FALSE}
-## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
-source('preps/longtowide_agg.R')
 
 ```
 
@@ -302,7 +297,7 @@ res.HC.sw <- ezANOVA(longdat.HC.sw, p_switch, id, within = .(volat,cond), detail
 res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = .(group),between_covariates = .(school_yrs), detailed = TRUE, type =3)
 
 # and make it look nicer
-anova_out(res.sw)
+anova_out(res.HC.sw)
 
 # make a boxplot to take a look at distribution of p_switch group and phasewise
 # panels show different groups
@@ -576,6 +571,8 @@ widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
 
 widedat.data.voi <- mutate(widedat.data.voi, delta_Vstr = meanact_Vstr_ST - meanact_Vstr_CT)
 widedat.data.voi <- mutate(widedat.data.voi, delta_nacc = meanact_nacc_ST - meanact_nacc_CT)
+widedat.data.voi <- mutate(widedat.data.voi, delta_vmPFC = meanact_vmPFC_ST - meanact_vmPFC_CT)
+
 
 ```
 
@@ -589,6 +586,13 @@ plot.vstr.delta
 
 ggsave(plot.vstr.delta, filename = "plot.vstr.delta","jpg", "/cloud/project/plots/meeting_plots")
 
+plot.vmpfc.delta  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
+plot.vmpfc.delta
+
+ggsave(plot.vmpfc.delta, filename = "plot.vmpfc.delta","jpg", "/cloud/project/plots/meeting_plots")
+
 plot.nacc.delta  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "∆ Nucleus accumbens activation  (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
@@ -601,12 +605,13 @@ ggsave(plot.nacc.delta, filename = "plot.nacc.delta","jpg", "/cloud/project/plot
 
 ## Plots of scaling and VOI
 ```{r}
-plot.vstr.scalingw  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_win",
+plot.vstr.scalingw  <- ggscatter(widedat.data.voi, x = "delta_vStr", y = "sc_win",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
-          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling Win") 
+          xlab = "∆ ventral striatum activation (ST-CT)", ylab = "Scaling Win") 
 plot.vstr.scalingw
 
 ggsave(plot.vstr.scalingw, filename = "plot.vstr.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
 
 plot.vstr.scalingl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_loss",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
@@ -614,6 +619,20 @@ plot.vstr.scalingl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_los
 plot.vstr.scalingl
 
 ggsave(plot.vstr.scalingl, filename = "plot.vstr.scalingl","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.vmpfc.scalingw  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "Scaling Win") 
+plot.vmpfc.scalingw
+
+ggsave(plot.vmpfc.scalingw, filename = "plot.vmpfc.scalingw","jpg", "/cloud/project/plots/meeting_plots")
+
+plot.vmpfc.scalingl  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "Scaling Loss") 
+plot.vmpfc.scalingl
+
+ggsave(plot.vmpfc.scalingl, filename = "plot.vmpfc.scalingl","jpg", "/cloud/project/plots/meeting_plots")
 
 plot.nacc.scalingw  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_win",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
@@ -733,7 +752,7 @@ longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond
 longdat.data.voi$cond <- factor(longdat.data.voi$cond,levels=rev(levels(longdat.data.voi$cond)))
 
 
-voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "p_correct", color = "cond",
+voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_vmPFC", y = "p_correct", color = "cond",
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation ventral striatum", ylab = "Correct responses") + facet_wrap("cond")
 voi_plot_1
@@ -774,6 +793,21 @@ voi_plot_4b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_win", col
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "Mean activation nucleus accumbens", ylab = "Scaling Loss") + facet_wrap("cond")
 voi_plot_4b
+
+se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
+
+
+sum.correct <- longdat.HC.correct %>% group_by(sub_id,phase,cond,volat) %>% summarise(meancorr = mean(p_correct,na.rm=TRUE),SE=se(p_correct))
+
+ggplot(data=df, aes(x=dose, y=len)) +
+  geom_bar(stat="identity", width=0.5)
+
+
+barplot.phase.pcorrect <- ggplot(data=sum.correct,aes(x = "volat",y = "meancorr")) + geom_bar(stat="identity", color="blue", fill="white")
+                # geom_errorbar(aes(ymin=meancorr-SE, ymax=meancorr+SE),width=.2) + 
+  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+
+
 
 barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct", 
           add = c("mean_se", "jitter"),

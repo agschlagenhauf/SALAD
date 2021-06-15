@@ -423,6 +423,9 @@ longdat.cond.both2 <- merge.data.frame(longdat.cond.phys2,longdat.cond.correct, 
 
 save(file='/cloud/project/dataframes/longdat.cond.both.rda',longdat.cond.both)
 
+# save aucg as excel for fMRI covariate analyses
+aucg_cov_prep <- load('/cloud/project/dataframes/longdat.cond.both.rda')
+write.csv(get(aucg_cov_prep), file='/cloud/project/fmri/aucg_cov_prep.csv')
 
 # plots correct performance onto cortisol stress level in both conditions
 wm_plot <- 
