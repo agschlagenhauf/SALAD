@@ -87,15 +87,7 @@ sd_params <- data_params %>% summarise_if(is.numeric, sd)
 
 params_sum <- rbind(median_params, sd_params)
 
-kable(
-  params_sum,
-  padding=-1L,
-  col.names = c("Alpha Win","Alpha Loss","Beta Win","Beta Loss","Scaling Win","Scaling Loss", "Beta + Scaling Win", "Beta + Scaling Loss")
-) %>%
-  row_spec(2,italic=TRUE)   %>%
-  kable_styling("striped",full_width = F,font_size = 12) %>%
-  footnote("Italic:SD", general_title = "Parameters have been transformed to be interpretable: Alpha (1-0), Beta (0-Inf)")
-
+# find and exclude outliers
 data_physio_behav %>% 
   # select the variable of interest
   select(bet_win) %>% 
@@ -113,6 +105,7 @@ data_physio_behav$zbet_win <- data_physio_behav %>%
   sort()
 # Distribution of parameters: separated because of different ranges
 
+# wide to long
 data_params_al <- data_params %>% select(c("al_win","al_loss"))
 data_params_bet <- data_params %>% select(c("bet_win","bet_loss","sc_bet_win","sc_bet_loss"))
 data_params_sc <- data_params %>% select(c("sc_win","sc_loss"))
@@ -128,6 +121,12 @@ data_params_long_al <- data_params_al %>%
   gather(key = "Parameter", value = "ParameterValue", -sub_idx)
 data_params_long_al
 
+bet_cov_prep <- data_physio_behav %>% select("sub_id","bet_win","bet_loss","sc_bet_win","sc_bet_loss")
+save(file='/cloud/project/dataframes/bet_cov_prep.rda',bet_cov_prep)
+bet_cov_prep <- load('/cloud/project/dataframes/bet_cov_prep.rda')
+write.csv(get(bet_cov_prep), file='/cloud/project/fmri/bet_cov_prep.csv')
+
+# make violin plots to show distribution
 p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
 p.betviol
 
