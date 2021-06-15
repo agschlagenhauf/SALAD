@@ -122,8 +122,9 @@ data_params_long_al <- data_params_al %>%
 data_params_long_al
 
 bet_cov_prep <- data_physio_behav %>% select("sub_id","bet_win","bet_loss","sc_bet_win","sc_bet_loss")
-save(file='/cloud/project/dataframes/bet_cov_prep.rda',bet_cov_prep)
-bet_cov_prep <- load('/cloud/project/dataframes/bet_cov_prep.rda')
+save(file='/cloud/project/dataframes/dat.bet_cov_prep.rda',bet_cov_prep)
+bet_cov_prep <- load('/cloud/project/dataframes/dat.bet_cov_prep.rda')
+
 write.csv(get(bet_cov_prep), file='/cloud/project/fmri/bet_cov_prep.csv')
 
 # make violin plots to show distribution
