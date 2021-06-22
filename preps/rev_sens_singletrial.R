@@ -47,7 +47,7 @@ revsensplot <- ggplot(dfsens,aes(x = Trial_idx,y = meandiff,color=Cond))+
   geom_point() + 
   geom_line() + 
   #geom_errorbar(aes(ymin=corr-SE, ymax=corr+SE),width=.2) + 
-  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+  labs(title = '',  x = "Trial Index", y = "Mean advantageous choices", color = "Condition") 
 
 revsensplot
 

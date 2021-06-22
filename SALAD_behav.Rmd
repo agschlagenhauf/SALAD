@@ -63,6 +63,9 @@ library("lattice")
 library("tinytex")
 library("sjmisc")
 library("schoRsch")
+library("gridExtra")
+library("grid")
+library("cowplot")
 
 
 ```
@@ -561,11 +564,14 @@ data_all <- mutate(data_all,m_delta_STCT = mean(delta_STCT))
 data_all$group <- as.factor(data_all$group)
 data_all$order <- as.factor(data_all$order)
 
+data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
+
 #load('/cloud/project/dataframes/data.voi.rda')
 
 # turn it into wide format by condition
 melted <- melt(dat.voi, id.vars= c("sub_id", "cond"))
 widedat.voi <- dcast(melted,  sub_id ~ variable + cond)
+
 
 widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
 
@@ -650,6 +656,37 @@ ggsave(plot.nacc.scalingl, filename = "plot.nacc.scalingl","jpg", "/cloud/projec
 
 ```
 
+## ANOVA vmPFC
+```{r, include=FALSE,error=FALSE,warning=FALSE}
+
+# now ezANOVA can be filled with dv = p_switch, within-variable = cond, between-variable = group and type 2 sums of squares
+
+# first for HC only
+res.vmPFC <- ezANOVA(longdat.data.voi, meanact_vmPFC, sub_id, within = .(cond),between = .(STlearning), detailed = TRUE, type = 3)
+
+# now for whole sample
+res.sw <- ezANOVA(longdat.sw, p_switch, id, within = .(volat,cond), between = .(group),between_covariates = .(school_yrs), detailed = TRUE, type =3)
+
+# and make it look nicer
+anova_out(res.vmPFC)
+
+# make a boxplot to take a look at distribution of p_switch group and phasewise
+# panels show different groups
+ggplot(dat.voi, aes(x=cond, y=meanact_vmPFC)) + geom_boxplot() 
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = dat.voi
+   , dv = .(meanact_vmPFC)
+   , wid = .(sub_id)
+   , within = .(cond)
+   , x = .(cond)
+   , y_lab = "meanact_vmPFC"
+   , split_lab = "Condition"
+)
+
+
+```
 
 
 ## Plots of deltas (beta+scaling and VOI)
@@ -719,15 +756,36 @@ data_dich_delta <- as.data.frame(data_dich_delta)
 ```{r}
 
 # by cond
-longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
                            # The source columns
 measure.vars=c("p_correct_ST","p_correct_CT"),
 variable.name="cond",
 value.name="p_correct"
 )
 
+longdat.pre.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_pre_CT","p_correct_pre_ST"),
+variable.name="cond",
+value.name="p_correct_pre"
+)
+
+longdat.rev.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_rev_CT","p_correct_rev_ST"),
+variable.name="cond",
+value.name="p_correct_rev"
+)
+
+longdat.post.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_post_CT","p_correct_post_ST"),
+variable.name="cond",
+value.name="p_correct_post"
+)
+
 # by phase for delta
-longdat.phase.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","delta_Vstr","delta_nacc"),
+longdat.phase.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_Vstr","delta_nacc"),
                            # The source columns
 measure.vars=c("delta_STCT_pre","delta_STCT_rev","delta_STCT_post"),
 variable.name="phase",
@@ -737,8 +795,18 @@ value.name="delta_correct"
 
 longdat.data_all$cond <- factor(longdat.data_all$cond,levels=rev(levels(longdat.data_all$cond)))
 
+longdat.pre.data_all$cond <- factor(longdat.pre.data_all$cond,levels=rev(levels(longdat.pre.data_all$cond)))
+longdat.rev.data_all$cond <- factor(longdat.rev.data_all$cond,levels=rev(levels(longdat.rev.data_all$cond)))
+longdat.post.data_all$cond <- factor(longdat.post.data_all$cond,levels=rev(levels(longdat.post.data_all$cond)))
+
+
 dat.voi$cond <- factor(dat.voi$cond)
 longdat.data_all$cond <- plyr::revalue(longdat.data_all$cond , c("p_correct_CT" = "CT","p_correct_ST"="ST"))
+
+longdat.pre.data_all$cond <- plyr::revalue(longdat.pre.data_all$cond , c("p_correct_pre_CT" = "CT","p_correct_pre_ST"="ST"))
+longdat.rev.data_all$cond <- plyr::revalue(longdat.rev.data_all$cond , c("p_correct_rev_CT" = "CT","p_correct_rev_ST"="ST"))
+longdat.post.data_all$cond <- plyr::revalue(longdat.post.data_all$cond , c("p_correct_post_CT" = "CT","p_correct_post_ST"="ST"))
+
 
 longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond"))
 
@@ -814,11 +882,48 @@ barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct",
           color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.3,
           position = position_dodge(0.8)) +
    xlab("Condition") + ylab("Percentage of correct responses") +
-   labs(title = 'Correct responses in raw data',  x = "", color = "Condition") +
+   labs(title = 'Correct responses across task',  x = "", color = "Condition") +
    scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
    theme(axis.text.x = element_blank()) +
-   scale_y_continuous(expand = c(0,0)) 
+   scale_y_continuous(expand = c(0,0),limits=c(0,1.01))
 barplot.pcorrect
+
+barplot.pcorrect_pre <- ggbarplot(longdat.pre.data_all, y = "p_correct_pre", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.3,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'First stable phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+   theme(axis.text.x = element_blank()) +
+   scale_y_continuous(expand = c(0,0),limits=c(0,1.1)) + 
+   theme(legend.position = "none")
+barplot.pcorrect_pre
+
+barplot.pcorrect_rev <- ggbarplot(longdat.rev.data_all, y = "p_correct_rev", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.3,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Reversal phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+   theme(axis.text.x = element_blank()) +
+   scale_y_continuous(expand = c(0,0),limits=c(0,1.1)) +
+   theme(legend.position = "none")
+barplot.pcorrect_rev
+
+barplot.pcorrect_post <- ggbarplot(longdat.post.data_all, y = "p_correct_post", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.3,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Percentage of correct responses") +
+   labs(title = 'Late stable phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+   theme(axis.text.x = element_blank()) +
+   scale_y_continuous(expand = c(0,0),limits=c(0,1.1)) +
+   theme(legend.position = "none")
+barplot.pcorrect_post
+
 
 longdat.phase.data_all$phase <- plyr::revalue(longdat.phase.data_all$phase, c("delta_STCT_pre" = "Pre-Reversal","delta_STCT_rev" ="Reversal","delta_STCT_post" ="Post Reversal"))
 
@@ -865,9 +970,12 @@ boxplot.delta.phase
 ggsave(boxplot.delta.phase, filename = "boxplot.delta.phase.png","jpg", "/cloud/project/plots/meeting_plots")
 
 
-f3_results <- ggarrange(barplot.pcorrect, boxplot.delta,
-                    labels = c("A", "B"),
-                    ncol = 2, nrow = 1)
+f3_results <- ggarrange(ggarrange(barplot.pcorrect, boxplot.delta, ncol = 2, labels = c("1", "2")),                                              # First row with scatter plot
+          ggarrange(barplot.pcorrect_pre, barplot.pcorrect_rev, barplot.pcorrect_post, ncol = 3, labels = c("1a", "1b", "1c")), # Second row with box and dot plots
+          nrow = 2, 
+          labels = "1"                                        # Labels of the scatter plot
+          ) 
+
 f3_results
 
 ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manuscript_plots")

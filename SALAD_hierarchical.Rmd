@@ -152,7 +152,25 @@ anova(mod0.HC.both.correct, mod0a.HC.both.correct,mod1.HC.both.correct,mod2.HC.b
 
 sjPlot::plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect"))
 
-sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
+OR_correct <- sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio of fixed-effects model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
+
+png(filename="OR_correct.png")  
+
+save_plot(
+OR_correct.png,
+fig = OR_correct,
+width = 12,
+height = 9,
+dpi = 300,
+theme = theme_get(),
+label.color = "black",
+label.size = 2.4,
+axis.textsize = 0.8,
+axis.titlesize = 0.75,
+legend.textsize = 0.6,
+legend.titlesize = 0.65,
+legend.itemsize = 0.5
+)
 
 sjPlot::tab_model(mod1.HC.correct, 
                   show.re.var= TRUE, 

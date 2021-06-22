@@ -12,7 +12,8 @@ fig_caption: yes
 
 This script:
 - loads necessary packages
-- imports data (data_physio_clean: physio dataset of both AD and HC - larger sample than behav: 136 in wide format, 
+- imports data (
+data_physio_clean: physio dataset of both AD and HC - larger sample than behav: 136 in wide format, 
                 data_physio_long: both cortisol and amylase marker (2*6) for every subject in long format
                 dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample
                 data_physio_behav: same but only HC sample)

@@ -74,11 +74,11 @@ data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx
 
 # UNCOMMENT THE FOLLOWING FOR NOT REMOVING 28-1B_057 (missing aucg_stress value), 17-1B015, 25-1B052, 28-1B056 (cortisol-nonresponder)
 # data_physio_behav_red <- data_physio_behav_red[-c(17,25,27,28),]
-data_physio_behav_red <- data_physio_behav_red[-c(28),]
+# data_physio_behav_red <- data_physio_behav_red[-c(28),]
 
 ################# PREPARE BEHAV DATASETS AND MERGE WITH PHYSIO + SINGLETRIALS (both HC and AD)
 
-data_new_HC <- merge(data_new_HC, data_all, by = c("sub_id", "sub_idx"))
+#data_new_HC <- merge(data_new_HC, data_all, by = c("sub_id", "sub_idx"))
 
 # here a final version of AUD sample is needed to decide based on sub_id which subjects should be part of single trial analyses
 # dat_all <- tibble::rowid_to_column(dat_all, "sub_idx")
@@ -123,10 +123,11 @@ longdat.physbehav3 <- melt(data_physio_behav_red,
 )
 
 # prepare partially long format
-longdat.physbehav1$cond <- factor(longdat.physbehav1$cond) 
-longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
-longdat.physbehav3$cond <- factor(longdat.physbehav3$cond) 
+# longdat.physbehav1$cond <- factor(longdat.physbehav1$cond) 
+# longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
+# longdat.physbehav3$cond <- factor(longdat.physbehav3$cond) 
 
+# careful here ggpubr can prevent the recoding to work!! detach before -> this needs a long-term solution
 longdat.physbehav1 <- longdat.physbehav1 %>% mutate(cond=recode(cond, `aucg_control`="control", `aucg_stress`="stress"))
 longdat.physbehav2 <- longdat.physbehav2 %>% mutate(cond=recode(cond, `z.peak_cort_control`="control", `z.peak_cort_stress`="stress"))
 longdat.physbehav3 <- longdat.physbehav3 %>% mutate(cond=recode(cond, `z.peak_amyl_control`="control", `z.peak_amyl_stress`="stress"))
@@ -140,6 +141,7 @@ longdat.physbehav2$sub_idx <- factor(longdat.physbehav2$sub_idx)
 longdat.physbehav3$sub_idx <- factor(longdat.physbehav3$sub_idx)
 
 data_prep$sub_id <- str_remove(data_prep$sub_id, "[_]")
+
 
 ## UNCOMMENT/COMMENT NEXT ROWS (depending on aucg_cort or zpeak_cort or zpeak_amyl)
 data_new_HC <- data_prep %>% right_join(longdat.physbehav1, by=c("sub_id","sub_idx","Cond"))
