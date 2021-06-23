@@ -181,17 +181,11 @@ OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title 
 save_plot(
   "OR_cond.svg",
   fig = last_plot(),
-  width = 12,
+  width = 9,
   height = 9,
   dpi = 300,
   theme = theme_get(),
   label.color = "black",
-  label.size = 2.4,
-  axis.textsize = 0.8,
-  axis.titlesize = 0.75,
-  legend.textsize = 0.6,
-  legend.titlesize = 0.65,
-  legend.itemsize = 0.5
 )
 
 
