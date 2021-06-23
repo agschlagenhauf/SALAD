@@ -96,7 +96,7 @@ dfagg$Cond <- factor(dfagg$Cond, levels=rev(levels(dfagg$Cond)))
 revsensplot <- ggplot(dfagg,aes(x = Trial_idx,y = corr,color=Cond))+ 
                 geom_line() + 
                 geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE),width=.2, alpha = 0.2) + 
-  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+  labs(title = '',  x = "Trial index", y = "Mean advantageous choices", color = "Condition") 
 
 revsensplot
 
@@ -107,7 +107,7 @@ dfagg_choice <- df %>% group_by(Trial_idx,Cond) %>% summarise(Choice=mean(Choice
 revsensplot <- ggplot(dfagg_choice,aes(x = Trial_idx,y = Choice,color=Cond))+ 
   geom_line() + 
   geom_ribbon(aes(ymin=Choice-SE, ymax=Choice+SE),width=.2, alpha = 0.2) + 
-  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+  labs(title = '',  x = "Trial index", y = "Mean choice of each card", color = "Condition") 
 
 revsensplot
 
