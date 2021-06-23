@@ -168,11 +168,11 @@ sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labe
 
 set_theme(
   base = theme_light(),
-  axis.title.size = 1,
+  axis.title.size = 0.5,
   axis.textsize = 1,
   legend.size = 1,
   legend.title.size = 1,
-  geom.label.size = 10
+  geom.label.size = 5
 )
 
 OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratios of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
