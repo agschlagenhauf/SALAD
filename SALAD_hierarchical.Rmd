@@ -167,11 +167,11 @@ plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio o
 sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
 
 set_theme(
-  base = theme_light(), geom.label.color ="#F8766D",
+  base = theme_light(), geom.boxoutline.color ="#F8766D",
   title.size = 1,
   axis.title.size = 0.5,
-  axis.textsize = 1,
-  legend.size = 0.3, # this changes the red parts
+  axis.textsize = 1.4,
+  legend.size = 0.2, # this changes the red parts
   legend.title.size = 1,
   geom.label.size = 0.5
 )
