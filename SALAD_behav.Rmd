@@ -144,6 +144,10 @@ by(dat_all$dsst, dat_all$group, mean)
 # by(dat_all$dsst, dat_all$group, sd)
 t.test(dsst ~ group, data=dat_all)
 
+sum_age <- data_all %>% summarise(MeanAge=mean(age,na.rm=T), sd=sd(age))
+sum_school <- data_all %>% summarise(Meanschoolyears=mean(school_yrs,na.rm=T), sd=sd(school_yrs))
+
+
 ```
 
 

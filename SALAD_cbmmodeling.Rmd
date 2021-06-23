@@ -113,6 +113,18 @@ data_params_sc <- data_params %>% select(c("sc_win","sc_loss"))
 data_params_bet <- tibble::rowid_to_column(data_params_bet, "sub_idx")
 data_params_al <- tibble::rowid_to_column(data_params_al, "sub_idx")
 
+data_params_bet <- data_params_bet %>% rename("Stress beta (win)" = sc_bet_win)
+data_params_bet <- data_params_bet %>% rename("Stress beta (loss)" = sc_bet_loss)
+
+
+data_params_bet <- data_params_bet %>% rename("Beta (win)" = bet_win)
+data_params_bet <- data_params_bet %>% rename("Beta (loss)" = bet_loss)
+
+data_params_al <- data_params_al %>% rename("Alpha (win)" = al_win)
+data_params_al <- data_params_al %>% rename("Alpha (loss)" = al_loss)
+
+
+
 data_params_long_bet <- data_params_bet %>% 
   gather(key = "Parameter", value = "ParameterValue", -sub_idx)
 data_params_long_bet
@@ -127,6 +139,10 @@ bet_cov_dat <- load('/cloud/project/dataframes/dat.bet_cov_prep.rda')
 
 write.csv(get(bet_cov_dat), file='/cloud/project/fmri/bet_cov_prep.csv')
 
+data_params_long_bet$Parameter <- factor(data_params_long_bet$Parameter)
+
+
+
 # make violin plots to show distribution
 p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
 p.betviol
@@ -134,8 +150,8 @@ p.betviol
 p.alviol <- ggplot(data_params_long_al, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE) + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
 p.alviol
 
-ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/committee_plots")
-ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/committee_plots")
+ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 ##################### CORRELATION MODELING params with each other
 

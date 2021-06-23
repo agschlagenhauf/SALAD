@@ -85,23 +85,33 @@ longdat.cond.both <- longdat.cond.both %>% rename(Cond = just_cond)
 
 dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("Cond","sub_id"))
 
+df <- df %>% mutate(Choice_t = dplyr::recode(Choice_t, `-1` = 0))
+
 # preparation for plot, calculate trialwise mean of correct choice across subject
-dfagg <- df %>% group_by(Trial_idx,Cond,revidx,reversal) %>% summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
+dfagg <- df %>% group_by(Trial_idx,Cond) %>% summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
 # and plot (according to Fig 4, Cremer, 2021)
 
 dfagg$Cond <- factor(dfagg$Cond, levels=rev(levels(dfagg$Cond)))
 
-revsensplot <- ggplot(dfagg,aes(x = revidx,y = corr,color=Cond))+ 
-                geom_point() + 
+revsensplot <- ggplot(dfagg,aes(x = Trial_idx,y = corr,color=Cond))+ 
                 geom_line() + 
-                geom_errorbar(aes(ymin=corr-SE, ymax=corr+SE),width=.2) + 
-                facet_wrap(.~reversal) +
+                geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE),width=.2, alpha = 0.2) + 
   labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
 
 revsensplot
 
-ggsave(revsensplot, filename = "senscortplotall","jpg", "/cloud/project/plots/meeting_plots")
+ggsave(revsensplot, filename = "senscortplotall_correct","jpg", "/cloud/project/plots/manuscript_plots")
 
+dfagg_choice <- df %>% group_by(Trial_idx,Cond) %>% summarise(Choice=mean(Choice_t,na.rm=TRUE),SE=se(Choice_t)) 
+
+revsensplot <- ggplot(dfagg_choice,aes(x = Trial_idx,y = Choice,color=Cond))+ 
+  geom_line() + 
+  geom_ribbon(aes(ymin=Choice-SE, ymax=Choice+SE),width=.2, alpha = 0.2) + 
+  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+
+revsensplot
+
+ggsave(revsensplot, filename = "senscortplotall_choice","jpg", "/cloud/project/plots/manuscript_plots")
 
 # scatter plot for sensitivity index (first or last) with cortisol AUC 
 
