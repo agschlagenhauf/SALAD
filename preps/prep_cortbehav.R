@@ -74,7 +74,7 @@ data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx
 
 # UNCOMMENT THE FOLLOWING FOR NOT REMOVING 28-1B_057 (missing aucg_stress value), 17-1B015, 25-1B052, 28-1B056 (cortisol-nonresponder)
 # data_physio_behav_red <- data_physio_behav_red[-c(17,25,27,28),]
-data_physio_behav_red <- data_physio_behav_red[-c(28),]
+#data_physio_behav_red <- data_physio_behav_red[-c(28),]
 
 ################# PREPARE BEHAV DATASETS AND MERGE WITH PHYSIO + SINGLETRIALS (both HC and AD)
 
@@ -127,7 +127,7 @@ longdat.physbehav3 <- melt(data_physio_behav_red,
 # longdat.physbehav2$cond <- factor(longdat.physbehav2$cond) 
 # longdat.physbehav3$cond <- factor(longdat.physbehav3$cond) 
 
-# careful here ggpubr can prevent the recoding to work!! detach before -> this needs a long-term solution
+# careful here car/rstatix can prevent the recoding to work!! detach before -> this needs a long-term solution
 longdat.physbehav1 <- longdat.physbehav1 %>% mutate(cond=recode(cond, `aucg_control`="control", `aucg_stress`="stress"))
 longdat.physbehav2 <- longdat.physbehav2 %>% mutate(cond=recode(cond, `z.peak_cort_control`="control", `z.peak_cort_stress`="stress"))
 longdat.physbehav3 <- longdat.physbehav3 %>% mutate(cond=recode(cond, `z.peak_amyl_control`="control", `z.peak_amyl_stress`="stress"))

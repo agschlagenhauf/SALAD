@@ -152,25 +152,49 @@ anova(mod0.HC.both.correct, mod0a.HC.both.correct,mod1.HC.both.correct,mod2.HC.b
 
 sjPlot::plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect"))
 
-OR_correct <- sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio of fixed-effects model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
+set_theme(
+  base = theme_light(),
+  axis.title.size = 1,
+  axis.textsize = 1,
+  legend.size = 1,
+  legend.title.size = 1,
+  geom.label.size = 10
+)
 
-png(filename="OR_correct.png")  
+plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
+# + font_size(title =15, axis_title.x=10, labels.y=10) 
+
+sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
+
+set_theme(
+  base = theme_light(),
+  axis.title.size = 1,
+  axis.textsize = 1,
+  legend.size = 1,
+  legend.title.size = 1,
+  geom.label.size = 10
+)
+
+OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratios of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
+# + font_size(title =15, axis_title.x=10, labels.y=10) 
 
 save_plot(
-OR_correct.png,
-fig = OR_correct,
-width = 12,
-height = 9,
-dpi = 300,
-theme = theme_get(),
-label.color = "black",
-label.size = 2.4,
-axis.textsize = 0.8,
-axis.titlesize = 0.75,
-legend.textsize = 0.6,
-legend.titlesize = 0.65,
-legend.itemsize = 0.5
+  "OR_cond.svg",
+  fig = last_plot(),
+  width = 12,
+  height = 9,
+  dpi = 300,
+  theme = theme_get(),
+  label.color = "black",
+  label.size = 2.4,
+  axis.textsize = 0.8,
+  axis.titlesize = 0.75,
+  legend.textsize = 0.6,
+  legend.titlesize = 0.65,
+  legend.itemsize = 0.5
 )
+
+
 
 sjPlot::tab_model(mod1.HC.correct, 
                   show.re.var= TRUE, 
@@ -186,9 +210,9 @@ sjPlot::tab_model(mod1.HC.cond.correct,
                   show.intercept = TRUE, show.est = TRUE, show.se = TRUE, show.stat = TRUE, show.df = TRUE,
                   pred.labels =c("Intercept", "Condition", "Reversal Phase", "Stable Phase"))
 
-sjPlot::tab_model(mod1.HC.cond.correct, 
-                  show.se = TRUE, show.stat = TRUE,show.est = TRUE, 
-                  pred.labels =c("Intercept", "Condition", "Reversal Phase", "Stable Phase"))
+sjPlot::tab_model(mod1.HC.correct, 
+                  show.intercept = TRUE, show.est = TRUE, show.se = TRUE, show.stat = TRUE, show.df = TRUE, show.re.var = FALSE,
+                  pred.labels =c("Intercept", "AUC Cortisol (Stress)", "Reversal Phase", "Stable Phase"))
 
 
 effects_Cond <- effects::effect(term= "Cond", mod= mod1.HC.cond.correct)
