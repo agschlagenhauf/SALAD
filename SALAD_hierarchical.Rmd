@@ -172,17 +172,16 @@ set_theme(
   axis.textsize = 1,
   legend.size = 1,
   legend.title.size = 1,
-  geom.label.size = 5
+  geom.label.size = 3
 )
 
-OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratios of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
-# + font_size(title =15, axis_title.x=10, labels.y=10) 
+OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title = "Winning mixed-effects model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
 
 save_plot(
   "OR_cond.svg",
   fig = last_plot(),
   width = 9,
-  height = 9,
+  height = 7,
   dpi = 300,
   theme = theme_get(),
   label.color = "black",
