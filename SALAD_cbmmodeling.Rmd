@@ -144,10 +144,10 @@ data_params_long_bet$Parameter <- factor(data_params_long_bet$Parameter)
 
 
 # make violin plots to show distribution
-p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
+p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=3, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) + theme(axis.title=element_text(size=12), axis.text=element_text(size=12)) 
 p.betviol
 
-p.alviol <- ggplot(data_params_long_al, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE) + stat_summary(fun=median, geom="point", size=2, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) 
+p.alviol <- ggplot(data_params_long_al, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE) + stat_summary(fun=median, geom="point", size=3, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) + theme(axis.title=element_text(size=12), axis.text=element_text(size=12)) 
 p.alviol
 
 ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/manuscript_plots")

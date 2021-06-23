@@ -966,7 +966,6 @@ barplot.pcorrect <- ggbarplot(data_all, y = "p_correct", x = "volat",
    scale_fill_brewer(palette="BuPu") 
 barplot.pcorrect
 
-          add = c("mean_se", "jitter"),
 
 boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
