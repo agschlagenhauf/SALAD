@@ -181,8 +181,8 @@ OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title 
 save_plot(
   "OR_cond.svg",
   fig = last_plot(),
-  width = 9,
-  height = 7,
+  width = 12,
+  height = 9,
   dpi = 300,
   theme = theme_get(),
   label.color = "black",
