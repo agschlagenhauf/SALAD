@@ -100,7 +100,7 @@ revsensplot <- ggplot(dfagg,aes(x = Trial_idx,y = corr,color=Cond))+
 
 revsensplot
 
-ggsave(revsensplot, filename = "senscortplotall_correct","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(revsensplot, filename = "senscortplotall_correct.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 dfagg_choice <- df %>% group_by(Trial_idx,Cond) %>% summarise(Choice=mean(Choice_t,na.rm=TRUE),SE=se(Choice_t)) 
 
@@ -111,7 +111,7 @@ revsensplot <- ggplot(dfagg_choice,aes(x = Trial_idx,y = Choice,color=Cond))+
 
 revsensplot
 
-ggsave(revsensplot, filename = "senscortplotall_choice","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(revsensplot, filename = "senscortplotall_choice.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 # scatter plot for sensitivity index (first or last) with cortisol AUC 
 
