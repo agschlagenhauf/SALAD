@@ -135,10 +135,10 @@ fig2chosplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
                 geom_line() +
                 geom_line(aes(x=Trial_idx,y=state_rev_2), color = "darkgrey") +
                 geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE,fill = Cond),width=.2, alpha = 0.2, linetype = 0) + 
-                labs(title = '',  x = "Trial index", y = "Chosen card", color = "Condition") +
+                labs(title = '',  x = "Trial index", y = "Proportion of chosen card", color = "Condition") +
                 scale_y_continuous(breaks = c(0,1), label = c("Card A", "Card B"),limits=c(0,1.01)) +
                 scale_x_continuous(limits=c(1,160)) +
-                theme(legend.position = "none")
+                theme(plot.title = element_text(face = "italic",size=12),axis.text=element_text(size=12), axis.title=element_text(size=14), legend.position = "none")
 fig2chosplot
 
 ggsave(fig2chosplot, filename = "fig2chosplot.png","jpg", "/cloud/project/plots/manuscript_plots")
