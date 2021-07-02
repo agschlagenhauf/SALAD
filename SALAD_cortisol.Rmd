@@ -117,8 +117,8 @@ cort_plot <-
    xlab("Time Point") + ylab("Cortisol activity in saliva in U/ml") +
    labs(title = 'Cortisol stress response',
         col = "Condition") + 
-   theme(plot.title = element_text(face = "italic"))
-   theme_classic()
+   theme(plot.title = element_text(face = "italic",size=12)) +
+   theme(legend.position = "none")
 cort_plot
 
 ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
@@ -183,8 +183,8 @@ vas1_plot <-
    xlab("Time Point") + ylab("Subjective Arousal") +
    labs(title = 'Subjective arousal',
         col = "Condition") + 
-   theme(plot.title = element_text(face = "italic"))
-   theme_classic()
+   theme(plot.title = element_text(face = "italic",size=12)) +
+   theme(legend.position = "none")
 vas1_plot
 
 ggsave(vas1_plot, filename = "vas1_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
@@ -204,8 +204,8 @@ vas2_plot <-
    xlab("Time Point") + ylab("Subjective Valence") +
    labs(title = 'Subjective valence',
         col = "Condition") + 
-   theme(plot.title = element_text(face = "italic"))
-   theme_classic()
+   theme(plot.title = element_text(face = "italic",size=12)) +
+   theme(legend.position = "none")
 vas2_plot
 
 ggsave(vas2_plot, filename = "vas2_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
@@ -225,13 +225,16 @@ vas3_plot <-
    xlab("Time Point") + ylab("Subjective Stress") +
    labs(title = 'Subjective stress',
         col = "Condition") + 
-   theme(plot.title = element_text(face = "italic"))
-   theme_classic()
+   theme(plot.title = element_text(face = "italic",size=12)) +
+   theme(legend.position = "none")
 vas3_plot
 
 ggsave(vas3_plot, width = 3, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
 
-f2_results <- ggarrange(vas1_plot, vas2_plot, vas3_plot, cort_plot,
+
+theme_set(theme_minimal())
+
+f2_results <- ggarrange(cort_plot,vas1_plot, vas2_plot, vas3_plot,
                     labels = c("A", "B", "C","D"),
                     ncol = 2, nrow = 2)
 f2_results

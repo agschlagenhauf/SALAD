@@ -129,6 +129,7 @@ dfaggstruc$Cond <- factor(dfaggstruc$Cond, levels=rev(levels(dfaggstruc$Cond)))
 
 dfaggstruc <- dfaggstruc %>% mutate(Cond=recode(Cond, `control`="Control", `stress`="Stress"))
 
+theme_set(theme_minimal())
 
 fig2chosplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
                 geom_line() +
@@ -136,7 +137,8 @@ fig2chosplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
                 geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE,fill = Cond),width=.2, alpha = 0.2, linetype = 0) + 
                 labs(title = '',  x = "Trial index", y = "Chosen card", color = "Condition") +
                 scale_y_continuous(breaks = c(0,1), label = c("Card A", "Card B"),limits=c(0,1.01)) +
-                scale_x_continuous(limits=c(1,160)) 
+                scale_x_continuous(limits=c(1,160)) +
+                theme(legend.position = "none")
 fig2chosplot
 
 ggsave(fig2chosplot, filename = "fig2chosplot.png","jpg", "/cloud/project/plots/manuscript_plots")
