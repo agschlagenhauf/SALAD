@@ -21,9 +21,29 @@ df <- data_prep
 # df$reversal[df$Trial_idx>=100 & df$Trial_idx<=110] <- 'Fourth Reversal'
 
 
+df$reversal[df$Trial_idx>=1 & df$Trial_idx<=55] <- 'state_1'
+df$reversal[df$Trial_idx>=71 & df$Trial_idx<=90] <- 'state_1'
+df$reversal[df$Trial_idx>=106 & df$Trial_idx<=125] <- 'state_1'
+
+df$reversal[df$Trial_idx>=56 & df$Trial_idx<=70] <- 'state_2'
+df$reversal[df$Trial_idx>=91 & df$Trial_idx<=105] <- 'state_2'
+df$reversal[df$Trial_idx>=126 & df$Trial_idx<=160] <- 'state_2'
+
+state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
+
+state_rev_2 <- replace(state_rev, state_rev==2, 0)
+trial_idx <- c(1:160)
+
+task_struc <- data.frame(state_rev_2)
+task_struc <- tibble::rowid_to_column(task_struc, "Trial_idx")
+task_struc$trial_idx <- as.numeric(task_struc$trial_idx)
+task_struc$state_rev_2 <- as.numeric(task_struc$state_rev_2)
+
 df$reversal <- factor(df$reversal)
 # index number of trials within reversal
 df$revidx <- rep(c(-5:-1,1:5),times=10*28)
+
+
 
 # create binary revstate variable
 df$revstate <- rep(c(1,2),each=5,times=10*28)
@@ -36,12 +56,15 @@ dfsens <- dfsens %>% arrange(desc(Cond))
 
 
 
-state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
 
-state_rev_2 <- replace(state_rev, state_rev==2, 0)
+
+
+plot <- ggplot(task_struc, aes(x=trial_idx, y = state_rev_2)) + geom_line(aes(group=1))
 
 taskstruc <- plot(state_rev_2,type = "o", col = "black", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
 taskstruc
+
+
 
 revsensplot <- ggplot(dfsens,aes(x = Trial_idx,y = meandiff,color=Cond))+ 
   geom_point() + 
@@ -67,11 +90,11 @@ dfsenswide$sensidx <- dfsenswide$'1' - dfsenswide$'2'
 
 dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
 
-dfsenswidefirst <- dfsenswide %>% filter(reversal == "First Reversal")
-dfsenswidesecond <- dfsenswide %>% filter(reversal == "Second Reversal")
-dfsenswidethird <- dfsenswide %>% filter(reversal == "Third Reversal")
-dfsenswidefourth <- dfsenswide %>% filter(reversal == "Fourth Reversal")
-dfsenswidelast <- dfsenswide %>% filter(reversal == "Last Reversal")
+# dfsenswidefirst <- dfsenswide %>% filter(reversal == "First Reversal")
+# dfsenswidesecond <- dfsenswide %>% filter(reversal == "Second Reversal")
+# dfsenswidethird <- dfsenswide %>% filter(reversal == "Third Reversal")
+# dfsenswidefourth <- dfsenswide %>% filter(reversal == "Fourth Reversal")
+# dfsenswidelast <- dfsenswide %>% filter(reversal == "Last Reversal")
 
 
 # prepare data for merge with physio
@@ -85,24 +108,61 @@ longdat.cond.both <- longdat.cond.both %>% rename(Cond = just_cond)
 
 dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("Cond","sub_id"))
 
-df <- df %>% mutate(Choice_t = dplyr::recode(Choice_t, `-1` = 0))
+df <- df %>% mutate(Choice_t = dplyr::recode(state, `-1` = 0))
 
-# preparation for plot, calculate trialwise mean of correct choice across subject
-dfagg <- df %>% group_by(Trial_idx,Cond) %>% summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
+
+df$df_chos1 <- NA
+df$df_chos1<-ifelse(df$Choice_t==1,"Card A","Card B")
+df$df_chos1 <- factor(df$df_chos1)
+
+# preparation for plot, calculate trialwise mean of correct choice across subject 
+dfagg_state1 <- df %>% group_by(Trial_idx,Cond)  %>% filter(reversal=="state_1")  %>%  summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
+dfagg_state2 <- df %>% group_by(Trial_idx,Cond)  %>% filter(reversal=="state_2")  %>%  summarise(corr=1-mean(Correct,na.rm=TRUE),SE=se(Correct)) 
+
+dfagg <- dfagg_state1 %>% bind_rows(dfagg_state2)
+
+dfaggstruc <- merge(dfagg,task_struc, by = "Trial_idx")
+
 # and plot (according to Fig 4, Cremer, 2021)
 
-dfagg$Cond <- factor(dfagg$Cond, levels=rev(levels(dfagg$Cond)))
+dfaggstruc$Cond <- factor(dfaggstruc$Cond, levels=rev(levels(dfaggstruc$Cond)))
 
-revsensplot <- ggplot(dfagg,aes(x = Trial_idx,y = corr,color=Cond))+ 
-                geom_line() + 
-                geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE),width=.2, alpha = 0.2) + 
-  labs(title = '',  x = "Trial index", y = "Mean advantageous choices", color = "Condition") 
+dfaggstruc <- dfaggstruc %>% mutate(Cond=recode(Cond, `control`="Control", `stress`="Stress"))
 
-revsensplot
 
-ggsave(revsensplot, filename = "senscortplotall_correct.png","jpg", "/cloud/project/plots/manuscript_plots")
+fig2chosplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
+                geom_line() +
+                geom_line(aes(x=Trial_idx,y=state_rev_2), color = "darkgrey") +
+                geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE,fill = Cond),width=.2, alpha = 0.2, linetype = 0) + 
+                labs(title = '',  x = "Trial index", y = "Chosen card", color = "Condition") +
+                scale_y_continuous(breaks = c(0,1), label = c("Card A", "Card B"),limits=c(0,1.01)) +
+                scale_x_continuous(limits=c(1,160)) 
+fig2chosplot
 
-dfagg_choice <- df %>% group_by(Trial_idx,Cond) %>% summarise(Choice=mean(Choice_t,na.rm=TRUE),SE=se(Choice_t)) 
+ggsave(fig2chosplot, filename = "fig2chosplot.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+fig2corrplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
+  geom_line() +
+  geom_line(aes(x=Trial_idx,y=state_rev_2), color = "darkgrey") +
+  geom_ribbon(aes(ymin=corr-SE, ymax=corr+SE,fill = Cond),width=.2, alpha = 0.2, linetype = 0) + 
+  labs(title = '',  x = "Trial index", y = "Chosen card", color = "Condition") +
+  scale_y_continuous(breaks = c(0,1), label = c("Card A", "Card B"),limits=c(0,1.01)) +
+  scale_x_continuous(limits=c(1,160)) 
+fig2chosplot
+
+ggsave(fig2chosplot, filename = "fig2chosplot.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+
+df$State <- as.numeric(df$State)
+df$Trial_idx <- as.numeric(df$Trial_idx)
+
+
+df %>% filter(sub_idx==1) %>% ggplot() + geom_line(aes(x=Trial_idx,y=State))
+
+
+ggsave(revsensplot, filename = "empirical_revs.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+dfagg_choice <- df %>% group_by(Trial_idx,Cond) %>% filter(Order==1)  %>% summarise(Choice=mean(Choice_t,na.rm=TRUE),SE=se(Choice_t)) 
 
 revsensplot <- ggplot(dfagg_choice,aes(x = Trial_idx,y = Choice,color=Cond))+ 
   geom_line() + 
