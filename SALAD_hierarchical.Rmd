@@ -161,8 +161,18 @@ set_theme(
   geom.label.size = 10
 )
 
-plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Condition Effect")) 
+plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, title = "Odd's Ratio of winning fixed-effect model", axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect")) 
 # + font_size(title =15, axis_title.x=10, labels.y=10) 
+
+save_plot(
+  "OR_cort.svg",
+  fig = last_plot(),
+  width = 12,
+  height = 9,
+  dpi = 300,
+  theme = theme_get(),
+  label.color = "black",
+)
 
 sjPlot::plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Condition Effect"))
 
@@ -180,6 +190,18 @@ OR_cond <- plot_model(mod1.HC.cond.correct,show.values=TRUE, show.p=TRUE, title 
 
 save_plot(
   "OR_cond.svg",
+  fig = last_plot(),
+  width = 12,
+  height = 9,
+  dpi = 300,
+  theme = theme_get(),
+  label.color = "black",
+)
+
+OR_cort <- plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, title = "Winning mixed-effects model", axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect"))
+
+save_plot(
+  "OR_cort.svg",
   fig = last_plot(),
   width = 12,
   height = 9,
