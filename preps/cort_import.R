@@ -60,10 +60,15 @@ data_physio_clean$z.peak_amyl <- z.peak_amyl
 # turn it into wide format, by condition
 melted <- melt(data_physio_clean, id.vars= c("VpNr", "condition"))
 data_physio_wide <- dcast(melted,  VpNr ~ variable + condition)
+data_physio_wide[,6:43] <- sapply(data_physio_wide[,6:43],as.numeric)
+
+data_physio_wide <- data_physio_wide %>% rename(sub_id = VpNr)
+
+data_physio_wide.HC <- data_physio_wide %>% filter(Gruppe_control == "Control")
 
 # save files (data_physio_clean: both AD and HC in long format, data_physio_wide: both AD and HC in wide format)
 save(file='/cloud/project/dataframes/data_physio_clean.rda',data_physio_clean)
-save(file='/cloud/project/dataframes/data_physio_wide.rda',data_physio_wide)
+save(file='/cloud/project/dataframes/data_physio_wide.HC.rda',data_physio_wide.HC)
 
 rm(data_physio_clean)
 rm(data_cort_time)

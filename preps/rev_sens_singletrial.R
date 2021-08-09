@@ -138,7 +138,7 @@ figchosplot <- ggplot(dfaggstruc,aes(x = Trial_idx,y = corr,color = Cond)) +
                 labs(title = '',  x = "Trial index", y = "Proportion of chosen card", color = "Condition") +
                 scale_y_continuous(breaks = c(0,1), label = c("Card A", "Card B"),limits=c(0,1.01)) +
                 scale_x_continuous(limits=c(1,160)) +
-                theme(plot.title = element_text(face = "italic",size=12),axis.text=element_text(size=14), axis.title=element_text(size=16)) 
+                theme(plot.title = element_text(face = "italic",size=12),axis.text=element_text(size=16), axis.title=element_text(size=18)) 
 
 fig2chosplot <- figchosplot + guides(
     fill = guide_legend(

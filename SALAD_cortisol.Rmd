@@ -57,6 +57,8 @@ load('/cloud/project/dataframes/dat_physio_behav_red.rda')
 load('/cloud/project/dataframes/data_physio_behav_red.rda')
 load('/cloud/project/dataframes/data_vas_long.rda')
 load('/cloud/project/dataframes/data_behav_vas.rda')
+load('/cloud/project/dataframes/data_physio_wide.HC.rda')
+load('/cloud/project/dataframes/data_all.rda')
 
 ```
 
@@ -91,7 +93,13 @@ hist(data_physio_clean$peak_amyl)
 
 ## Physiological stress response (according to Luettgau, 2013): for cortisol and amylase
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+## merge data_all with data_physio_wide.HC to get final sample 1
+
+data_all$sub_id <- str_remove(data_all$sub_id, "[_]")
+
+data_physio_wide_all <- merge(data_all,data_physio_wide.HC, by = "sub_id")
+
 #CHANGE HERE for cortisol or amylase plot
 #data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "amyl")
 data_physio_long.HC <- data_physio_long %>%  filter(Gruppe == "Control", marker == "cort")
@@ -142,10 +150,9 @@ ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manusc
 # ggsave(amyl_plot, filename = "amyl_plot.png","jpg", "/cloud/project/plots/committee_plots")
 
 # paired ttest for AUC ST vs. CT: significant difference
-auc.cort.ttest <- stats::t.test(data_physio_behav_red$aucg_control, data_physio_behav_red$aucg_stress, paired = TRUE)
-auc.cort.ttest <- data_physio_behav_red %>% t_test(aucg_control ~ aucg_stress, paired = TRUE)
+auc.cort.ttest <- stats::t.test(data_physio_wide_all$indivaucg_control, data_physio_wide_all$indivaucg_stress, paired = TRUE)
 
-auc.amyl.ttest <- stats::t.test(data_physio_behav_red$aucg_amyl_control, data_physio_behav_red$aucg_amyl_stress, paired = TRUE)
+#auc.amyl.ttest <- stats::t.test(data_physio_behav_red$aucg_amyl_control, data_physio_behav_red$aucg_amyl_stress, paired = TRUE)
 
 # paired ttest for pre-stress cortisol between ST and CT: no significant difference
 auc.T1cort.ttest <- stats::t.test(dat_physio_behav$t1_cort_control, dat_physio_behav$t1_cort_stress, paired = TRUE)
@@ -258,12 +265,11 @@ vas3.ttest <- stats::t.test(data_behav_vas$aucgvas3ct, data_behav_vas$aucgvas3st
 # Lennart's paper: Of the 34 participants, 6 (18%) showed a cortisol response of < 1.5 nmol/l (Miller et al., 2013) and were therefore considered non-responders. 
 # Should we do this as well (and if so with T4-T2, there is no info on the time points in Lennart's paper) or no need with our analysis approach of AUC?
 # in our study: that would be 4 participants but how to go on then? Lennart did all behavioral analyses separately with responders but had a larger sample to start with
-# should be with T1 instead?
 
 # p_correct single trial analysis without those 4 non-responders - change?
-# post both results (w/wo non-responder) in chat with Claudia
+# post both results (w/wo non-responder) in chat with Claudia: no difference
 
-
+# decided to mention that in the supplement
 
 dat_physio_behav <- dat_physio_behav %>% rowwise %>% mutate(cort_min = min(t1_cort_stress,t2_cort_stress,na.rm=TRUE),cort_max = max(t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,na.rm=TRUE))
 

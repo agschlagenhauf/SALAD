@@ -332,6 +332,9 @@ xyplot(p_switch ~ volat1  | sub_id, groups=cond,auto.key = TRUE, data=longdat.sw
 
 ```
 
+
+
+
 ## rmANOVA p_lswitch
 ```{r, include=FALSE,error=FALSE,warning=FALSE}
 
