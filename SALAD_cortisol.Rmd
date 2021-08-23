@@ -285,26 +285,26 @@ cort.nonresponder <- dat_physio_behav %>% filter(cort_response_stress < 1.5)
 ```{r}
 
 # calculate the difference between individual p_correct values (ST-CT) for single phases and all
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_pre = mean(diff_STCT_pre))
+data_physio_wide_all <- mutate(data_physio_wide_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_physio_wide_all <- mutate(data_physio_wide_all,m_diff_STCT_pre = mean(diff_STCT_pre))
 
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_rev = mean(diff_STCT_rev))
+data_physio_wide_all <- mutate(data_physio_wide_all, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_physio_wide_all <- mutate(data_physio_wide_all,m_diff_STCT_rev = mean(diff_STCT_rev))
 
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_post = mean(diff_STCT_post))
+data_physio_wide_all <- mutate(data_physio_wide_all, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_physio_wide_all <- mutate(data_physio_wide_all,m_diff_STCT_post = mean(diff_STCT_post))
 
-data_physio_behav <- mutate(data_physio_behav, diff_STCT = p_correct_ST - p_correct_CT)
+data_physio_wide_all <- mutate(data_physio_wide_all, diff_STCT = p_correct_ST - p_correct_CT)
 
 # create continuous variable for interindividual cortisol response change:
-data_physio_behav <- data_physio_behav %>% rowwise() %>% mutate(aucg_diff = aucg_stress - aucg_control)
+data_physio_wide_all <- data_physio_wide_all %>% rowwise() %>% mutate(aucg_diff = indivaucg_stress - indivaucg_control)
 
-plot.interindiv.cort <- ggplot(data_physio_behav, aes(x=group, y=aucg_diff, color = order)) + 
+plot.interindiv.cort <- ggplot(data_physio_wide_all, aes(x=group, y=aucg_diff, color = order)) + 
   geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
   geom_jitter(position=position_jitter(width=.1, height=0)) +
    xlab("Group") + ylab("Differences between ST and CT AUCG Cortisol") 
 
-plot.diff.corr <- ggscatter(data_physio_behav, x = "diff_STCT", y = "aucg_diff", 
+plot.diff.corr <- ggscatter(data_physio_wide_all, x = "diff_STCT", y = "aucg_diff", 
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Interindiv p_correct differences", ylab = "Interindiv AUC-G cortisol differences")
@@ -337,10 +337,10 @@ physio_plot3 <-  ggscatter(dat_physio_behav.HC, x = "p_correct_ST", y = "aucg_st
           xlab = "Correct Responses (ST)", ylab = "AUC Cortisol (ST)")
 physio_plot3
 
-physio_plot4 <-  ggscatter(dat_physio_behav.HC, x = "p_win_stay_ST", y = "aucg_stress", na.rm = TRUE,
+physio_plot4 <-  ggscatter(dat_physio_behav.HC, x = "p_correct_CT", y = "aucg_control", na.rm = TRUE,
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Win Stay Behavior (ST)", ylab = "AUC Cortisol (ST)")
+          xlab = "Correct Responses (CT)", ylab = "AUC Cortisol (CT)")
 physio_plot4
 
 

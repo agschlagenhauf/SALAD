@@ -66,6 +66,26 @@ load('/cloud/project/dataframes/data_params.rda')
 data_physio_behav$wm_cap <- dicho(data_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
 data_physio_behav$wm_cap <-factor(data_physio_behav$wm_cap, labels=c("low WM", "high WM"))
 
+
+data_physio_behav <- mutate(data_physio_behav, delta_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_physio_behav <- mutate(data_physio_behav,m_delta_STCT_pre = mean(delta_STCT_pre))
+
+data_physio_behav <- mutate(data_physio_behav, delta_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_physio_behav <- mutate(data_physio_behav,m_delta_STCT_rev = mean(delta_STCT_rev))
+
+data_physio_behav <- mutate(data_physio_behav, delta_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_physio_behav <- mutate(data_physio_behav,m_delta_STCT_post = mean(delta_STCT_post))
+
+data_physio_behav <- mutate(data_physio_behav, delta_STCT = p_correct_ST - p_correct_CT)
+data_physio_behav <- mutate(data_physio_behav,m_delta_STCT = mean(delta_STCT))
+
+data_physio_behav$STlearning <- dicho(data_physio_behav$delta_STCT, dich.by = 0, as.num = TRUE)
+data_physio_behav$STlearning <-factor(data_physio_behav$STlearning, labels=c("worse under stress", "better under stress"))
+
+chronstr_delta.ttest <- stats::t.test(PSS_Total~STlearning, var.equal = TRUE, data = data_physio_behav)
+WM_delta.ttest <- stats::t.test(num_backward~STlearning, var.equal = TRUE, data = data_physio_behav)
+
+
 # dichotomize HC dataset by lifetime stress (PSS)
 data_physio_behav$lt_stress <- dicho(data_physio_behav$PSS_Total, dich.by = "median", as.num = TRUE)
 data_physio_behav$lt_stress <-factor(data_physio_behav$lt_stress, labels=c("low lifetime stress", "high lifetime stress"))
@@ -252,11 +272,13 @@ betwin.ttest <- stats::t.test(data_params$bet_win)
 betloss.ttest <- stats::t.test(data_params$bet_loss)
 
 # paired ttest for betas with and w/o scaling against each other
-pairedwin.ttest <- stats::t.test(data_params$bet_win,data_params$sc_win, paired = TRUE)
-pairedloss.ttest <- stats::t.test(data_params$bet_loss,data_params$sc_loss, paired = TRUE)
+pairedwin.ttest <- stats::t.test(data_params$bet_win,data_params$sc_bet_win, paired = TRUE)
+pairedloss.ttest <- stats::t.test(data_params$bet_loss,data_params$sc_bet_loss, paired = TRUE)
 
 pairedwinlossbet.ttest <- stats::t.test(data_params$bet_win,data_params$bet_loss, paired = TRUE)
 pairedwinlossal.ttest <- stats::t.test(data_params$al_win,data_params$al_loss, paired = TRUE)
+
+
 
 # Cortisol difference correlated with scaling factors
 
@@ -278,9 +300,52 @@ p.mod.cortscwin
 ## Neuropsychology and Modeling Parameters
 ```{r}
 
-neuropsych_params <- select(data_physio_behav,tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss)
+neuropsych_params <- select(data_physio_behav,sub_id, group, order, age, IQ_WST, school_yrs, tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss, STlearning)
 
-res3 <- rcorr(as.matrix(neuropsych_params))
+np_params <- rcorr(as.matrix(neuropsych_params))
+
+longdat.np_cond <- melt(neuropsych_params,
+                          # ID variables - all the variables to keep but not split apart on
+                          id.vars=c("sub_id", "group","order","age","IQ_WST","school_yrs","num_backward","STlearning"),
+                          # The source columns
+                          measure.vars=c("bet_win","sc_bet_win"),
+                          # Name of the destination column that will identify the original
+                          # column that the measurement came from
+                          variable.name="cond",
+                          value.name="betas"
+)
+
+longdat.np_winloss <- reshape(neuropsych_params,
+                          varying = list(c("bet_win", "bet_loss"),
+                                   c("sc_bet_win", "sc_bet_loss")),
+                          direction="long",
+                          timevar="winloss",
+                          idvar=c("sub_id"),
+                          v.names=c("win","loss"),
+)
+
+longdat.np_winloss_2 <- reshape(longdat.np_winloss,
+                          varying = list(c("win", "loss")),
+                          direction="long",
+                          timevar="cond",
+                          idvar=c("sub_id","winloss"),
+                          v.names=c("betas"),
+)
+
+res.condbeta <- ezANOVA(longdat.np_winloss_2,betas, wid = sub_id, within = .(cond,winloss), detailed = TRUE, type = 3)
+
+anova_out(res.condbeta)
+
+ezPlot(
+   data = longdat.np_params
+   , dv = .(betas)
+   , wid = .(sub_id)
+   , within = .(cond)
+   , between = .(STlearning)
+   , x = .(cond)
+   , y_lab = "betas"
+   , split_lab = "Condition"
+)
 
 corrplot(res3$r,method = "color", type="upper", 
          p.mat = res3$P, sig.level = 0.05, insig = "blank")
