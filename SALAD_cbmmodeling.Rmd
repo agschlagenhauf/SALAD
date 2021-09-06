@@ -241,11 +241,15 @@ mod_pcorrect_plot_7 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y =
           xlab = "Beta Win", ylab = "Correct Performance CT")
 mod_pcorrect_plot_7
 
+ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
 mod_pcorrect_plot_8 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Beta Loss", ylab = "Correct Performance CT")
 mod_pcorrect_plot_8
+
+ggsave(mod_pcorrect_plot_8, filename = "fmodpcorrect_lossCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
 
 mod_pcorrect_plot_9 <- ggscatter(data_physio_behav, x = "sc_bet_win", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
@@ -253,11 +257,16 @@ mod_pcorrect_plot_9 <- ggscatter(data_physio_behav, x = "sc_bet_win", y = "p_cor
           xlab = "Scaling + Beta Win", ylab = "Correct Performance ST")
 mod_pcorrect_plot_9
 
+ggsave(mod_pcorrect_plot_9, filename = "fmodpcorrect_winST_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
 mod_pcorrect_plot_10 <- ggscatter(data_physio_behav, x = "sc_bet_loss", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Scaling + Beta Loss", ylab = "Correct Performance ST")
 mod_pcorrect_plot_10
+
+ggsave(mod_pcorrect_plot_10, filename = "fmodpcorrect_lossST_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
 
 # ttest for scaling against 0
 scwin.ttest <- stats::t.test(data_params$sc_win)
@@ -302,8 +311,6 @@ p.mod.cortscwin
 
 neuropsych_params <- select(data_physio_behav,sub_id, group, order, age, IQ_WST, school_yrs, tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss, STlearning)
 
-np_params <- rcorr(as.matrix(neuropsych_params))
-
 longdat.np_cond <- melt(neuropsych_params,
                           # ID variables - all the variables to keep but not split apart on
                           id.vars=c("sub_id", "group","order","age","IQ_WST","school_yrs","num_backward","STlearning"),
@@ -332,20 +339,7 @@ longdat.np_winloss_2 <- reshape(longdat.np_winloss,
                           v.names=c("betas"),
 )
 
-res.condbeta <- ezANOVA(longdat.np_winloss_2,betas, wid = sub_id, within = .(cond,winloss), detailed = TRUE, type = 3)
-
-anova_out(res.condbeta)
-
-ezPlot(
-   data = longdat.np_params
-   , dv = .(betas)
-   , wid = .(sub_id)
-   , within = .(cond)
-   , between = .(STlearning)
-   , x = .(cond)
-   , y_lab = "betas"
-   , split_lab = "Condition"
-)
+res.condbeta <- ezANOVA(data= longdat.np_winloss_2,dv = betas, wid = sub_id, within = .(cond),between = STlearning, detailed = TRUE, type = 3)
 
 corrplot(res3$r,method = "color", type="upper", 
          p.mat = res3$P, sig.level = 0.05, insig = "blank")

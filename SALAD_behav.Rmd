@@ -14,7 +14,7 @@ fig_caption: yes
 This script 
 - loads necessary packages
 - imports data (dat for full sample and data for HC sample)
-- recruits preps-subscripts for 1) preparing aggregated variable names (prep_agg) and 2) transforming to long (longtowide_agg)
+- recruits preps-subscripts for 1) preparing aggregated variable names (prep_agg) and 2) transforming to long (widetolong_agg)
 - reproduces Zsuzsi's analyses on the SALAD dataset (descriptive only)
 - adds repeated measures ANOVA for all main outcome variables + respective plots
 - plots interindividual differences for p_correct
@@ -75,7 +75,7 @@ library("cowplot")
 ## NECESSARY TO RUN THIS FIRST: 
 load('/cloud/project/dataframes/dat.nooutlier.rda')
 load('/cloud/project/dataframes/dat.voi.rda')
-
+load('/cloud/project/dataframes/dat.ins.rda')
 
 ```
 
@@ -84,7 +84,7 @@ load('/cloud/project/dataframes/dat.voi.rda')
 ## NECESSARY TO RUN THIS FIRST (if it does not work try uninstalling plyr or reshape2)
 #detach("package:reshape2", unload=TRUE)
 source('preps/prep_agg.R')
-source('preps/longtowide_agg.R')
+source('preps/widetolong_agg.R')
 
 
 ```
@@ -582,8 +582,21 @@ data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
 melted <- melt(dat.voi, id.vars= c("sub_id", "cond"))
 widedat.voi <- dcast(melted,  sub_id ~ variable + cond)
 
-
 widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
+
+widedat.data.ins <- dat.ins %>% right_join(data_all, by="sub_id")
+
+
+longdat.ins <- melt(widedat.data.ins,
+                        # ID variables - all the variables to keep but not split apart on
+                        id.vars=c("sub_id", "group","order","age","school_yrs"),
+                        # The source columns
+                        measure.vars=c("meanact_CT","meanact_ST"),
+                        # Name of the destination column that will identify the original
+                        # column that the measurement came from
+                        variable.name="cond",
+                        value.name="ins"
+)
 
 widedat.data.voi <- mutate(widedat.data.voi, delta_Vstr = meanact_Vstr_ST - meanact_Vstr_CT)
 widedat.data.voi <- mutate(widedat.data.voi, delta_nacc = meanact_nacc_ST - meanact_nacc_CT)
@@ -599,6 +612,18 @@ plot.vstr.delta  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "delta_STC
           add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
           xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
 plot.vstr.delta
+
+longdat.ins %>%
+  ggplot(aes(x=cond, y=ins, fill=cond)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    xlab("")
+
+plot.ins  <- ggplot(data = longdat.ins, aes(x = cond, y = ins), fill = cond) +
+geom_boxplot(aes(middle = mean(ins)))
+#add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          #xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Activation of RPE")
+
 
 ggsave(plot.vstr.delta, filename = "plot.vstr.delta","jpg", "/cloud/project/plots/meeting_plots")
 
