@@ -151,11 +151,95 @@ ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manusc
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_wide_all$indivaucg_control, data_physio_wide_all$indivaucg_stress, paired = TRUE)
+auc.cort.ttest
 
 #auc.amyl.ttest <- stats::t.test(data_physio_behav_red$aucg_amyl_control, data_physio_behav_red$aucg_amyl_stress, paired = TRUE)
 
 # paired ttest for pre-stress cortisol between ST and CT: no significant difference
-auc.T1cort.ttest <- stats::t.test(dat_physio_behav$t1_cort_control, dat_physio_behav$t1_cort_stress, paired = TRUE)
+indiv.T1cort.ttest <- stats::t.test(data_physio_behav$t1_cort_control, data_physio_behav$t1_cort_stress, paired = TRUE)
+indiv.T1cort.ttest
+
+indiv.T2cort.ttest <- stats::t.test(data_physio_behav$t2_cort_control, data_physio_behav$t2_cort_stress, paired = TRUE)
+indiv.T2cort.ttest
+
+# paired ttest for during-stress cortisol between ST and CT: significant difference
+indiv.T3cort.ttest <- stats::t.test(data_physio_behav$t3_cort_control, data_physio_behav$t3_cort_stress, paired = TRUE)
+indiv.T3cort.ttest
+
+indiv.T4cort.ttest <- stats::t.test(data_physio_behav$t4_cort_control, data_physio_behav$t4_cort_stress, paired = TRUE)
+indiv.T4cort.ttest
+
+indiv.T5cort.ttest <- stats::t.test(data_physio_behav$t5_cort_control, data_physio_behav$t5_cort_stress, paired = TRUE)
+indiv.T5cort.ttest
+
+indiv.T6cort.ttest <- stats::t.test(data_physio_behav$t6_cort_control, data_physio_behav$t6_cort_stress, paired = TRUE)
+indiv.T6cort.ttest
+
+############# now for VAS scales (upon reviewer request) ###########
+
+### VAS1
+# paired ttest for pre-stress cortisol between ST and CT: no significant difference
+indiv.T1vas.ttest <- stats::t.test(data_behav_vas$vas1_t1_ctrl, data_behav_vas$vas1_t1_str, paired = TRUE)
+indiv.T1vas.ttest
+
+# paired ttest for during-stress cortisol between ST and CT: significant difference
+indiv.T2vas.ttest <- stats::t.test(data_behav_vas$vas1_t2_ctrl, data_behav_vas$vas1_t2_str, paired = TRUE)
+indiv.T2vas.ttest
+
+indiv.T3vas.ttest <- stats::t.test(data_behav_vas$vas1_t3_ctrl, data_behav_vas$vas1_t3_str, paired = TRUE)
+indiv.T3vas.ttest
+
+indiv.T4vas.ttest <- stats::t.test(data_behav_vas$vas1_t4_ctrl, data_behav_vas$vas1_t4_str, paired = TRUE)
+indiv.T4vas.ttest
+
+# paired ttest for post-stress cortisol between ST and CT: no significant difference
+indiv.T5vas.ttest <- stats::t.test(data_behav_vas$vas1_t5_ctrl, data_behav_vas$vas1_t5_str, paired = TRUE)
+indiv.T5vas.ttest
+
+indiv.T6vas.ttest <- stats::t.test(data_behav_vas$vas1_t6_ctrl, data_behav_vas$vas1_t6_str, paired = TRUE)
+indiv.T6vas.ttest
+
+### VAS2
+# paired ttest for pre-stress cortisol between ST and CT: no significant difference
+indiv.T1vas.ttest <- stats::t.test(data_behav_vas$vas2_t1_ctrl, data_behav_vas$vas2_t1_str, paired = TRUE)
+indiv.T1vas.ttest
+
+# paired ttest for during-stress cortisol between ST and CT: significant difference
+indiv.T2vas.ttest <- stats::t.test(data_behav_vas$vas2_t2_ctrl, data_behav_vas$vas2_t2_str, paired = TRUE)
+indiv.T2vas.ttest
+
+indiv.T3vas.ttest <- stats::t.test(data_behav_vas$vas2_t3_ctrl, data_behav_vas$vas2_t3_str, paired = TRUE)
+indiv.T3vas.ttest
+
+indiv.T4vas.ttest <- stats::t.test(data_behav_vas$vas2_t4_ctrl, data_behav_vas$vas2_t4_str, paired = TRUE)
+indiv.T4vas.ttest
+
+indiv.T5vas.ttest <- stats::t.test(data_behav_vas$vas2_t5_ctrl, data_behav_vas$vas2_t5_str, paired = TRUE)
+indiv.T5vas.ttest
+
+indiv.T6vas.ttest <- stats::t.test(data_behav_vas$vas2_t6_ctrl, data_behav_vas$vas2_t6_str, paired = TRUE)
+
+### VAS3
+# paired ttest for pre-stress cortisol between ST and CT: no significant difference
+indiv.T1vas.ttest <- stats::t.test(data_behav_vas$vas3_t1_ctrl, data_behav_vas$vas3_t1_str, paired = TRUE)
+indiv.T1vas.ttest
+
+# paired ttest for during-stress cortisol between ST and CT: significant difference
+indiv.T2vas.ttest <- stats::t.test(data_behav_vas$vas3_t2_ctrl, data_behav_vas$vas3_t2_str, paired = TRUE)
+indiv.T2vas.ttest
+
+indiv.T3vas.ttest <- stats::t.test(data_behav_vas$vas3_t3_ctrl, data_behav_vas$vas3_t3_str, paired = TRUE)
+indiv.T3vas.ttest
+
+indiv.T4vas.ttest <- stats::t.test(data_behav_vas$vas3_t4_ctrl, data_behav_vas$vas3_t4_str, paired = TRUE)
+indiv.T4vas.ttest
+
+indiv.T5vas.ttest <- stats::t.test(data_behav_vas$vas3_t5_ctrl, data_behav_vas$vas3_t5_str, paired = TRUE)
+indiv.T5vas.ttest
+
+# paired ttest for post-stress cortisol between ST and CT: no significant difference
+indiv.T6vas.ttest <- stats::t.test(data_behav_vas$vas3_t6_ctrl, data_behav_vas$vas3_t6_str, paired = TRUE)
+indiv.T6vas.ttest
 
 ```
 
