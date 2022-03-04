@@ -85,6 +85,9 @@ data_physio_behav$STlearning <-factor(data_physio_behav$STlearning, labels=c("wo
 chronstr_delta.ttest <- stats::t.test(PSS_Total~STlearning, var.equal = TRUE, data = data_physio_behav)
 WM_delta.ttest <- stats::t.test(num_backward~STlearning, var.equal = TRUE, data = data_physio_behav)
 
+sum_chronstr <- data_physio_behav %>% group_by(STlearning) %>% summarise(MeanPSSTotal=mean(PSS_Total,na.rm=T), sd=sd(PSS_Total,na.rm=T))
+sum_numbackward <- data_physio_behav %>% group_by(STlearning) %>% summarise(num_backward=mean(num_backward,na.rm=T), sd=sd(num_backward,na.rm=T))
+
 
 # dichotomize HC dataset by lifetime stress (PSS)
 data_physio_behav$lt_stress <- dicho(data_physio_behav$PSS_Total, dich.by = "median", as.num = TRUE)
@@ -196,6 +199,7 @@ data_physio_behav <- data_physio_behav  %>% mutate(bet_ST_win = abs(bet_win) + a
 
 data_physio_behav.nooutlier <- data_physio_behav %>% filter(zbet_win < 3)
 
+
 # plots for modeling params of DU_scaling_bothCond (winning model with different betas for ST vs. CT) and p_correct
 mod_pcorrect_plot_1 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "diff_STCT",
           add = "reg.line", conf.int = TRUE, 
@@ -226,19 +230,19 @@ mod_pcorrect_plot_4
 mod_pcorrect_plot_5 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_win", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta + Beta Scaling Win", ylab = "Correct Performance ST")
+          xlab = "Beta ST Win", ylab = "Correct Performance ST")
 mod_pcorrect_plot_5
 
 mod_pcorrect_plot_6 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_loss", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta + Beta Scaling Loss", ylab = "Correct Performance ST")
+          xlab = "Beta ST Loss", ylab = "Correct Performance ST")
 mod_pcorrect_plot_6
 
 mod_pcorrect_plot_7 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Win", ylab = "Correct Performance CT")
+          xlab = "Beta CT Win", ylab = "Correct Performance CT")
 mod_pcorrect_plot_7
 
 ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
@@ -246,7 +250,7 @@ ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "
 mod_pcorrect_plot_8 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Loss", ylab = "Correct Performance CT")
+          xlab = "Beta CT Loss", ylab = "Correct Performance CT")
 mod_pcorrect_plot_8
 
 ggsave(mod_pcorrect_plot_8, filename = "fmodpcorrect_lossCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
@@ -266,6 +270,34 @@ mod_pcorrect_plot_10 <- ggscatter(data_physio_behav, x = "sc_bet_loss", y = "p_c
 mod_pcorrect_plot_10
 
 ggsave(mod_pcorrect_plot_10, filename = "fmodpcorrect_lossST_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+
+# scaling beta + beta = ST correlated with AUCG-ST
+
+mod_aucg_plot_1 <- ggscatter(data_physio_behav, x = "sc_bet_loss", y = "aucg_stress",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Scaling + Beta Loss", ylab = "AUCG-Stress")
+mod_aucg_plot_1
+
+mod_aucg_plot_2 <- ggscatter(data_physio_behav, x = "sc_bet_win", y = "aucg_stress",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Scaling + Beta Loss", ylab = "AUCG-Stress")
+mod_aucg_plot_2
+
+# just beta = CT correlated with AUCG-CT
+
+mod_aucg_plot_3 <- ggscatter(data_physio_behav, x = "bet_loss", y = "aucg_control",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Beta CT Loss", ylab = "AUCG-Stress")
+mod_aucg_plot_3
+
+mod_aucg_plot_4 <- ggscatter(data_physio_behav, x = "bet_win", y = "aucg_control",
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Beta CT Win", ylab = "AUCG-Stress")
+mod_aucg_plot_4
 
 
 # ttest for scaling against 0
@@ -338,6 +370,8 @@ longdat.np_winloss_2 <- reshape(longdat.np_winloss,
                           idvar=c("sub_id","winloss"),
                           v.names=c("betas"),
 )
+
+longdat.np_winloss_2$cond <- factor(longdat.np_winloss_2$cond)
 
 res.condbeta <- ezANOVA(data= longdat.np_winloss_2,dv = betas, wid = sub_id, within = .(cond),between = STlearning, detailed = TRUE, type = 3)
 
