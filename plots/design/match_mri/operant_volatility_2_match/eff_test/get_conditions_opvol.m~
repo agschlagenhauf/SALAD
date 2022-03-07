@@ -1,0 +1,24 @@
+function get_conditions_opvol(iti)
+
+if ~nargin
+    i1 = 1;
+end
+
+% timing
+Z.max_choice_time        =  1.5;             % maximal time to respond sec
+Z.display_choice         =  0;               % duration to highlight choice with frame without feedback 
+Z.display_fb             =  0.5;             % duration to display feedback
+Z.min_display_fix_cross  =  1;               % + jittered ITI for fMRI; mean 2.5s + 20% null events
+
+trial_dur = (Z.max_choice_time+Z.display_fb+Z.min_display_fix_cross+ITI)';
+trial_start = [5;cumsum(trial_dur(1:end-1,:))];
+% 1. Specify Conditions
+onsets{1}       = trial_start; % MODIFY
+durations{1}    = 0;
+names{1}        = 'fbEvent';
+pmod(1).name{1} = 'PE';
+pmod(1).param{1}= sort(rand(1,160)); % MODIFY
+pmod(1).poly{1} = 1;
+
+% save multiple_conditions onsets durations names pmod
+save('multiple_conditions',  'onsets', 'durations', 'names', 'pmod');

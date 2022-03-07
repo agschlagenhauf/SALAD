@@ -1,0 +1,20 @@
+steepness                 = 10; 	    % exponential distribution rate from which to generate ITIs
+minimal_planed_ITI        = 0;	    % minimal ITI 
+maximal_planed_ITI        = 7;      % maximal ITI 
+number_of_trials          = 160;
+trial_duration_ohne_ITI   = 3; 
+
+while 1 
+      ITI_initial = random('exp',steepness,1,number_of_trials);
+      p = max(ITI_initial)/maximal_planed_ITI;
+      ITI_final = (ITI_initial/p)+minimal_planed_ITI;
+      a = mean(ITI_final);
+      if a < 1.51 & a > 1.49 break; end
+end
+
+figure; hist(ITI_final)
+fprintf(1,'min:\t%6.3f\n',min(ITI_final))
+fprintf(1,'max:\t%6.3f\n',max(ITI_final))
+fprintf(1,'mean:\t%6.3f\n',mean(ITI_final))
+fprintf(1,'total ITI:\t%6.3f\n',sum(ITI_final)/60)
+fprintf(1,'total dur:\t%6.3f\n',(sum(ITI_final)+number_of_trials*(trial_duration_ohne_ITI))/60)
