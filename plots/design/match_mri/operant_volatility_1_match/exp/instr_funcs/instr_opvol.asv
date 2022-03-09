@@ -1,0 +1,36 @@
+fprintf('............. Displaying instructions \n');
+i=0; clear tx ypos func;
+func{1}=[];
+
+i=i+1; 
+	ypos{i}=yposm;
+	tx{i}=['Willkommen zu diesem Gewinnspiel.\n\n Wir werden es Ihnen jetzt erklären.\n Benutzen Sie bitte die rechte Pfeiltaste, um vorwärts zu blättern und die linke Pfeiltaste, um zurück zu blättern.'];
+
+i=i+1; 
+	ypos{i}=yposm;
+	tx{i}=['In diesem Gewinnspiel geht es darum, so viel Geld wie möglich zu gewinnen.\n Dafür wählen Sie zwischen zwei farbigen Symbolen.\n Ihren Geldgewinn bekommen Sie am Ende des Epxerimentes ausgezahlt!'];
+
+i=i+1; 
+	ypos{i}=ypost;
+	tx{i}=['Immer wenn Sie zwei farbige Symbole sehen haben Sie 1.5 Sekunden Zeit eines der beiden auszuwählen.\n\nDazu drücken Sie bitte die Taste f für die linke Figur und die Taste j für die rechte Figur.'];
+    func{i}='Screen(''DrawTexture'',wd,dreieck, [],box(1,:)); Screen(''DrawTexture'',wd,viereck, [],box(2,:));getleftrightarrow;';
+    
+i=i+1; 
+	ypos{i}=ypost;
+	tx{i}=['Sofort nach der Wahl bekommen Sie eine Rückmeldung. Entweder wird das gewählte Symbol mit 10 Cent belohnt...'];
+    func{i}='Screen(''DrawTexture'',wd,squareframe,[],boxl(1,:)); Screen(''DrawTexture'',wd,dreieck, [],box(1,:)); Screen(''DrawTexture'',wd,viereck, [],box(2,:));Screen(''DrawTexture'',wd,smiley,[],box_center);getleftrightarrow;';
+    
+i=i+1; 
+	ypos{i}=ypost;
+	tx{i}=['... oder das Symbol wird bestraft. Dann werden Ihnen 10 Cent von Ihrem Konto abgezogen.'];
+    func{i}='Screen(''DrawTexture'',wd,squareframe,[],boxl(1,:)); Screen(''DrawTexture'',wd,dreieck, [],box(1,:)); Screen(''DrawTexture'',wd,viereck, [],box(2,:));Screen(''DrawTexture'',wd,frowny,[],box_center);getleftrightarrow;';
+
+i=i+1; 
+	ypos{i}=yposm;
+	tx{i}=['Eines der beiden Symbole wird häufiger belohnt als das andere.\n Keines der Symbole gewinnt oder verliert immer, sondern man kann gelegentlich auch zufällig gewinnen oder verlieren.\n Im Experiment geht es darum, immer die Figur zu wählen, die Ihnen mehr Gewinn bringt!'];
+ 
+i=i+1; 
+	ypos{i}=yposm;
+	tx{i}='Lassen Sie uns das kurz üben.';
+    
+instr_display;

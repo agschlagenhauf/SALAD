@@ -44,10 +44,11 @@ dat.vas <- dat.vas.raw %>% select(VpNr,vas1_t1_ctrl,vas2_t1_ctrl,vas3_t1_ctrl, v
 # dat_physio <- dat_physio %>% subset(dat_physio$operant_inclusion=="1")
 # dat_complete <- na.omit(dat)
 # 
-# dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
-# dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
+dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
+dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
 
 dat.nooutlier <- dat %>% filter(p_correct_T1 > .55) %>% filter(p_correct_T2 > .55)
+
 
 # save behavioral data and modeling parameters for later use
 save(file='/cloud/project/dataframes/dat.rda',dat)
