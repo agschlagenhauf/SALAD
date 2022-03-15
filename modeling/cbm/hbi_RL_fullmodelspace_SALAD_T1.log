@@ -1,0 +1,112 @@
+cbm_hbi_hbi                                       23-Apr-2020 16:09:23
+Running hierarchical bayesian inference (HBI)...
+
+HBI has been initialized according to
+	SU1al_SALAD_T1.mat [for model 1]
+	SU2al_SALAD_T1.mat [for model 2]
+	iDU1al_SALAD_T1.mat [for model 3]
+	iDU2al_SALAD_T1.mat [for model 4]
+	DU1al_SALAD_T1.mat [for model 5]
+	DU2al_SALAD_T1.mat [for model 6]
+ 
+Number of samples: 51
+Number of models: 6
+======================================================================
+Iteration 01
+Iteration 02
+	model frequencies (percent)
+	model 1: 23.3| model 2: 21.3| model 3: 15.8| model 4: 15.9| model 5: 13.1| model 6: 10.7| 
+                                                           dL:   31.65
+                                                           dm:   76.72
+                                                           dx:    0.45
+Iteration 03
+	model frequencies (percent)
+	model 1: 29.3| model 2: 21.3| model 3: 14.2| model 4: 15.6| model 5: 11.8| model 6: 7.8| 
+                                                           dL:    4.94
+                                                           dm:    6.05
+                                                           dx:    0.15
+Iteration 04
+	model frequencies (percent)
+	model 1: 34.0| model 2: 19.9| model 3: 12.8| model 4: 16.3| model 5: 11.4| model 6: 5.6| 
+                                                           dL:    3.44
+                                                           dm:    4.64
+                                                           dx:    0.11
+Iteration 05
+	model frequencies (percent)
+	model 1: 37.6| model 2: 17.6| model 3: 11.5| model 4: 18.1| model 5: 11.6| model 6: 3.6| 
+                                                           dL:    3.32
+                                                           dm:    3.64
+                                                           dx:    0.12
+Iteration 06
+	model frequencies (percent)
+	model 1: 40.5| model 2: 15.1| model 3: 10.1| model 4: 20.3| model 5: 12.1| model 6: 1.8| 
+                                                           dL:    3.66
+                                                           dm:    2.87
+                                                           dx:    0.13
+Iteration 07
+	model frequencies (percent)
+	model 1: 42.7| model 2: 12.7| model 3: 8.6| model 4: 22.6| model 5: 12.9| model 6: 0.6| 
+                                                           dL:    4.45
+                                                           dm:    2.19
+                                                           dx:    0.13
+Iteration 08
+	model frequencies (percent)
+	model 1: 44.2| model 2: 10.7| model 3: 6.8| model 4: 24.7| model 5: 13.4| model 6: 0.2| 
+                                                           dL:    3.79
+                                                           dm:    1.53
+                                                           dx:    0.17
+Iteration 09
+	model frequencies (percent)
+	model 1: 45.3| model 2: 9.2| model 3: 4.9| model 4: 26.8| model 5: 13.6| model 6: 0.1| 
+                                                           dL:    2.00
+                                                           dm:    1.09
+                                                           dx:    0.15
+Iteration 10
+	model frequencies (percent)
+	model 1: 45.9| model 2: 8.3| model 3: 3.1| model 4: 28.8| model 5: 13.8| model 6: 0.1| 
+                                                           dL:    1.82
+                                                           dm:    0.65
+                                                           dx:    0.11
+Iteration 11
+	model frequencies (percent)
+	model 1: 46.2| model 2: 7.8| model 3: 1.5| model 4: 30.6| model 5: 13.8| model 6: 0.1| 
+                                                           dL:    2.38
+                                                           dm:    0.25
+                                                           dx:    0.11
+Iteration 12
+	model frequencies (percent)
+	model 1: 46.2| model 2: 7.6| model 3: 0.5| model 4: 32.0| model 5: 13.6| model 6: 0.1| 
+                                                           dL:    2.31
+                                                           dm:    0.03
+                                                           dx:    0.12
+Iteration 13
+	model frequencies (percent)
+	model 1: 46.0| model 2: 7.4| model 3: 0.1| model 4: 32.9| model 5: 13.4| model 6: 0.1| 
+                                                           dL:    0.47
+                                                           dm:    0.14
+                                                           dx:    0.14
+Iteration 14
+	model frequencies (percent)
+	model 1: 46.0| model 2: 7.3| model 3: 0.1| model 4: 33.4| model 5: 13.2| model 6: 0.1| 
+                                                           dL:   -0.24
+                                                           dm:    0.02
+                                                           dx:    0.08
+Iteration 15
+	model frequencies (percent)
+	model 1: 46.1| model 2: 7.2| model 3: 0.1| model 4: 33.6| model 5: 13.0| model 6: 0.1| 
+                                                           dL:    0.03
+                                                           dm:    0.06
+                                                           dx:    0.03
+Iteration 16
+	model frequencies (percent)
+	model 1: 46.0| model 2: 7.1| model 3: 0.1| model 4: 33.8| model 5: 12.9| model 6: 0.1| 
+                                                           dL:   -0.02
+                                                           dm:    0.08
+                                                           dx:    0.01
+Iteration 17
+	model frequencies (percent)
+	model 1: 45.9| model 2: 7.1| model 3: 0.1| model 4: 34.0| model 5: 12.9| model 6: 0.1| 
+                                                           dL:    0.05
+                                                           dm:    0.08
+                                                           dx:    0.01
+                                                          Converged :]

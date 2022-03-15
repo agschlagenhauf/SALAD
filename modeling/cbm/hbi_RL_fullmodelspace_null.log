@@ -1,0 +1,31 @@
+cbm_hbi_hbi                                       28-Jul-2020 10:23:31
+Running hierarchical bayesian inference (HBI)- null mode...
+
+HBI has been initialized according to
+	SU1al.mat [for model 1]
+	SU2al.mat [for model 2]
+	iDU1al.mat [for model 3]
+	iDU2al.mat [for model 4]
+	DU1al.mat [for model 5]
+	DU2al.mat [for model 6]
+ 
+Number of samples: 50
+Number of models: 6
+======================================================================
+Iteration 01
+Iteration 02
+                                                           dL:   20.94
+                                                           dx:    0.23
+Iteration 03
+                                                           dL:    1.07
+                                                           dx:    0.06
+Iteration 04
+                                                           dL:   -0.46
+                                                           dx:    0.02
+Iteration 05
+                                                           dL:    0.70
+                                                           dx:    0.01
+Iteration 06
+                                                           dL:   -0.66
+                                                           dx:    0.01
+                                                          Converged :]
