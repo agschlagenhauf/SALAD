@@ -4,6 +4,7 @@ library(dplyr)
 # get necessary datasets saved from data_import script
 load('/cloud/project/dataframes/dat.rda')
 load('/cloud/project/dataframes/data.rda')
+load('/cloud/project/dataframes/dat.nooutlier.rda')
 
 # prepare data first: p_correct_T1 needs to be turned into p_correct_CT and P_correct_T2 into P_Correct_S for order = 1(A)
 
@@ -277,3 +278,4 @@ save(file='/cloud/project/dataframes/data_all.rda',data_all)
 
 rm(dat)
 rm(data)
+rm(dat.nooutlier)

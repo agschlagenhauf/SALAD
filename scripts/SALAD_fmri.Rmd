@@ -1,0 +1,551 @@
+---
+title: "SALAD Analyses in R"
+author: "Lara Wieland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+fig_caption: yes
+---
+
+This script was mostly not used in the manuscript (apart from 8 for Figure 3) and:
+1) loads necessary packages
+2) imports data (dat_all includes behav and demog data; dat.voi includes extracted VOI values from task effect regions VStr, NAcc and vmPFC for CT and ST separately; dat.ins: mean activation of ST/CT insula)
+3) prepares data by merging behav and fMRI data
+4) Plots for behav only: 
+5) Plots for fmri extracted VOI and behav
+6) 
+(a) Plots for fMRI extracted VOI and modeling (deltas)
+(b) Plots for fMRI extracted VOI and modeling (condition-wise)
+7) ANOVA delta learning and vmPFC 
+8) Figure 3
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+rm(list = ls()) 
+
+if (!require(ggplot2)) install.packages("ggplot2")
+if (!require(ggpubr)) install.packages("ggpubr")
+if (!require(tidyverse)) install.packages("tidyverse")
+if (!require(psych)) install.packages("psych")
+if (!require(car)) install.packages("car")
+if (!require(lme4)) install.packages("lme4")
+if (!require(reshape2)) install.packages("reshape2")
+if (!require(ez)) install.packages("ez")
+if (!require(broom)) install.packages("broom")
+if (!require(strex)) install.packages("strex")
+if (!require(nlme)) install.packages("nlme")
+if (!require(lattice)) install.packages("lattice")
+if (!require(tinytex)) install.packages('tinytex')
+if (!require(reshape2)) install.packages('reshape2')
+if (!require(sjmisc)) install.packages('sjmisc')
+if (!require(schoRsch)) install.packages('schoRsch')
+
+library("ggplot2")
+library("ggpubr")
+library("tidyverse")
+library("psych")
+library("car")
+library("lme4")
+library("reshape2")
+library("ez")
+library("broom")
+library("strex")
+library("nlme")
+library("lattice")
+library("tinytex")
+library("sjmisc")
+library("schoRsch")
+library("gridExtra")
+library("grid")
+library("cowplot")
+
+
+```
+
+# 2) Data Import
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST: 
+load('/cloud/project/dataframes/dat.voi.rda')
+load('/cloud/project/dataframes/data_all.rda')
+load('/cloud/project/dataframes/dat.ins.rda')
+load('/cloud/project/dataframes/longdat.HC.correct.rda')
+load('/cloud/project/dataframes/longdat.correct.rda')
+
+```
+
+# 3) Preps
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST: 
+# for whatever reason dat_all is not numeric so make it numeric first
+data_all[,6:65] <- sapply(data_all[,6:65],as.numeric)
+
+# calculate the difference between individual values (ST-CT) for single phases and all
+data_all <- mutate(data_all, delta_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
+data_all <- mutate(data_all,m_delta_STCT_pre = mean(delta_STCT_pre))
+
+data_all <- mutate(data_all, delta_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
+data_all <- mutate(data_all,m_delta_STCT_rev = mean(delta_STCT_rev))
+
+data_all <- mutate(data_all, delta_STCT_post = p_correct_post_ST - p_correct_post_CT)
+data_all <- mutate(data_all,m_delta_STCT_post = mean(delta_STCT_post))
+
+data_all <- mutate(data_all, delta_STCT = p_correct_ST - p_correct_CT)
+data_all <- mutate(data_all,m_delta_STCT = mean(delta_STCT))
+
+data_all$group <- as.factor(data_all$group)
+data_all$order <- as.factor(data_all$order)
+
+data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
+
+#load('/cloud/project/dataframes/data.voi.rda')
+
+# turn it into wide format by condition
+melted <- melt(dat.voi, id.vars= c("sub_id", "cond"))
+widedat.voi <- dcast(melted,  sub_id ~ variable + cond)
+widedat.data.voi <- widedat.voi %>% right_join(data_all, by="sub_id")
+widedat.data.ins <- dat.ins %>% right_join(data_all, by="sub_id")
+
+longdat.ins <- melt(widedat.data.ins,
+                        # ID variables - all the variables to keep but not split apart on
+                        id.vars=c("sub_id", "group","order","age","school_yrs"),
+                        # The source columns
+                        measure.vars=c("meanact_CT","meanact_ST"),
+                        # Name of the destination column that will identify the original
+                        # column that the measurement came from
+                        variable.name="cond",
+                        value.name="ins"
+)
+
+widedat.data.voi <- mutate(widedat.data.voi, delta_Vstr = meanact_Vstr_ST - meanact_Vstr_CT)
+widedat.data.voi <- mutate(widedat.data.voi, delta_nacc = meanact_nacc_ST - meanact_nacc_CT)
+widedat.data.voi <- mutate(widedat.data.voi, delta_vmPFC = meanact_vmPFC_ST - meanact_vmPFC_CT)
+
+
+# dichotomize HC dataset by learning under stress (delta of ST-CT)
+data_all$STlearning <- dicho(data_all$delta_STCT, dich.by = 0, as.num = TRUE)
+data_dich_delta <- cbind(data_all$STlearning,data_all$sub_id)
+data_dich_delta <- as.data.frame(data_dich_delta)
+
+## Prepare plots with conditionwise separation (e.g. p_correct_CT with VOI_CT)
+# by cond
+longdat.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_ST","p_correct_CT"),
+variable.name="cond",
+value.name="p_correct"
+)
+
+longdat.pre.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_pre_CT","p_correct_pre_ST"),
+variable.name="cond",
+value.name="p_correct_pre"
+)
+
+longdat.rev.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_rev_CT","p_correct_rev_ST"),
+variable.name="cond",
+value.name="p_correct_rev"
+)
+
+longdat.post.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_STCT_pre","delta_STCT_rev","delta_STCT_post","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("p_correct_post_CT","p_correct_post_ST"),
+variable.name="cond",
+value.name="p_correct_post"
+)
+
+# by phase for delta
+longdat.phase.data_all <- melt(widedat.data.voi, id.vars=c("sub_id","order","age","weight","height","education","tmt_a","tmt_b","dsst","num_forward","num_backward","BIS_total","IQ_WST","school_yrs","al_win","al_loss","bet_win","bet_loss","sc_bet_win","sc_bet_loss","sc_loss","sc_win","delta_STCT","STlearning","delta_Vstr","delta_nacc"),
+                           # The source columns
+measure.vars=c("delta_STCT_pre","delta_STCT_rev","delta_STCT_post"),
+variable.name="phase",
+value.name="delta_correct"
+)
+
+longdat.data_all$cond <- factor(longdat.data_all$cond,levels=rev(levels(longdat.data_all$cond)))
+
+longdat.pre.data_all$cond <- factor(longdat.pre.data_all$cond,levels=rev(levels(longdat.pre.data_all$cond)))
+longdat.rev.data_all$cond <- factor(longdat.rev.data_all$cond,levels=rev(levels(longdat.rev.data_all$cond)))
+longdat.post.data_all$cond <- factor(longdat.post.data_all$cond,levels=rev(levels(longdat.post.data_all$cond)))
+
+
+dat.voi$cond <- factor(dat.voi$cond)
+longdat.data_all$cond <- plyr::revalue(longdat.data_all$cond , c("p_correct_CT" = "CT","p_correct_ST"="ST"))
+
+longdat.pre.data_all$cond <- plyr::revalue(longdat.pre.data_all$cond , c("p_correct_pre_CT" = "CT","p_correct_pre_ST"="ST"))
+longdat.rev.data_all$cond <- plyr::revalue(longdat.rev.data_all$cond , c("p_correct_rev_CT" = "CT","p_correct_rev_ST"="ST"))
+longdat.post.data_all$cond <- plyr::revalue(longdat.post.data_all$cond , c("p_correct_post_CT" = "CT","p_correct_post_ST"="ST"))
+longdat.data.voi <- dat.voi %>% right_join(longdat.data_all, by=c("sub_id","cond"))
+
+
+```
+
+
+## 4) Plots of behav only
+```{r}
+# across phases
+plot.interindiv.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.1, height=0)) +
+   xlab("Group") + ylab("Differences between ST and CT Condition") 
+plot.interindiv.delta
+
+plot.interindiv.delta.pre <- ggplot(data_all, aes(x=group, y=delta_STCT_pre)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.1, height=0)) 
+plot.interindiv.delta.pre 
+
+plot.interindiv.delta.rev <- ggplot(data_all, aes(x=group, y=delta_STCT_rev)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.1, height=0)) 
+plot.interindiv.delta.rev
+
+plot.interindiv.delta.post <- ggplot(data_all, aes(x=group, y=delta_STCT_post, color=order)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.1, height=0))
+plot.interindiv.delta.post
+
+```
+
+# 5) Plots for fMRI extracted VOI and behav: non of them significant
+```{r}
+
+# for delta of p_correct and ventral striatum
+plot.vstr.delta  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)")
+plot.vstr.delta
+
+ggsave(plot.vstr.delta, filename = "plot.vstr.delta","jpg", "/cloud/project/plots/meeting")
+
+# to compare meanact
+plot.ins  <- ggplot(data = longdat.ins, aes(x = cond, y = ins), fill = cond) +
+geom_boxplot(aes(middle = mean(ins)))
+
+longdat.ins %>%
+  ggplot(aes(x=cond, y=ins, fill=cond)) +
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    xlab("")
+
+# for delta of p_correct and vmPFC
+plot.vmpfc.delta  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
+plot.vmpfc.delta
+
+ggsave(plot.vmpfc.delta, filename = "plot.vmpfc.delta","jpg", "/cloud/project/plots/meeting")
+
+# for delta of p_correct and nacc
+plot.nacc.delta  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "delta_STCT",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation  (ST-CT)", ylab = "∆ Percentage correct responses (ST-CT)") 
+plot.nacc.delta
+
+ggsave(plot.nacc.delta, filename = "plot.nacc.delta","jpg", "/cloud/project/plots/meeting")
+
+```
+
+
+## 6) (a) Plots for fMRI extracted VOI and modeling: none of them significant either
+```{r, include=FALSE}
+
+## first only for scaling
+plot.vstr.scalingw  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ ventral striatum activation (ST-CT)", ylab = "Scaling Win") 
+plot.vstr.scalingw
+
+ggsave(plot.vstr.scalingw, filename = "plot.vstr.scalingw","jpg", "/cloud/project/plots/meeting")
+
+plot.vstr.scalingl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling Loss") 
+plot.vstr.scalingl
+
+ggsave(plot.vstr.scalingl, filename = "plot.vstr.scalingl","jpg", "/cloud/project/plots/meeting")
+
+plot.vmpfc.scalingw  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "Scaling Win") 
+plot.vmpfc.scalingw
+
+ggsave(plot.vmpfc.scalingw, filename = "plot.vmpfc.scalingw","jpg", "/cloud/project/plots/meeting")
+
+plot.vmpfc.scalingl  <- ggscatter(widedat.data.voi, x = "delta_vmPFC", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ vmPFC activation (ST-CT)", ylab = "Scaling Loss") 
+plot.vmpfc.scalingl
+
+ggsave(plot.vmpfc.scalingl, filename = "plot.vmpfc.scalingl","jpg", "/cloud/project/plots/meeting")
+
+plot.nacc.scalingw  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling Win") 
+plot.nacc.scalingw
+
+ggsave(plot.nacc.scalingw, filename = "plot.nacc.scalingw","jpg", "/cloud/project/plots/meeting")
+
+plot.nacc.scalingl  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling Loss") 
+plot.nacc.scalingl
+
+ggsave(plot.nacc.scalingl, filename = "plot.nacc.scalingl","jpg", "/cloud/project/plots/meeting")
+
+## beta+scaling and VOI
+plot.vstr.scalbetw  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_bet_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling + Beta Win") 
+plot.vstr.scalbetw
+
+ggsave(plot.vstr.scalbetw, filename = "plot.vstr.scalingw","jpg", "/cloud/project/plots/meeting")
+
+plot.vstr.scalbetl  <- ggscatter(widedat.data.voi, x = "delta_Vstr", y = "sc_bet_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Ventral striatum activation (ST-CT)", ylab = "Scaling + Beta Loss") 
+plot.vstr.scalbetl
+
+ggsave(plot.vstr.scalbetl, filename = "plot.vstr.scalingl","jpg", "/cloud/project/plots/meeting")
+
+plot.nacc.scalbetw  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_bet_win",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling + Beta Win") 
+plot.nacc.scalbetw
+
+ggsave(plot.nacc.scalbetw, filename = "plot.nacc.scalingw","jpg", "/cloud/project/plots/meeting")
+
+plot.nacc.scalbetl  <- ggscatter(widedat.data.voi, x = "delta_nacc", y = "sc_bet_loss",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "∆ Nucleus accumbens activation (ST-CT)", ylab = "Scaling + Beta Loss") 
+plot.nacc.scalbetl
+
+ggsave(plot.nacc.scalbetl, filename = "plot.nacc.scalingl","jpg", "/cloud/project/plots/meeting")
+
+```
+
+
+
+## 6) (b) Plots with conditionwise separation (e.g. p_correct_CT with VOI_CT): none of them significant either, apart from voi_plot_2 under ST 
+```{r}
+# P_correct and VOI conditions separate
+
+longdat.data.voi$cond <- factor(longdat.data.voi$cond,levels=rev(levels(longdat.data.voi$cond)))
+
+voi_plot_1 <- ggscatter(longdat.data.voi, x = "meanact_vmPFC", y = "p_correct", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation ventral striatum", ylab = "Correct responses") + facet_wrap("cond")
+voi_plot_1
+
+ggsave(voi_plot_1, filename = "voi_plot_1.png","jpg", "/cloud/project/plots/meeting")
+
+voi_plot_2 <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "p_correct", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Correct responses") + facet_wrap("cond")
+voi_plot_2
+
+ggsave(voi_plot_2, filename = "voi_plot_2.png","jpg", "/cloud/project/plots/meeting")
+
+# Modeling + VOI
+
+voi_plot_3a <- ggscatter(longdat.data.voi, x = "meanact_nacc", y = "sc_bet_win", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
+voi_plot_3a
+
+ggsave(voi_plot_3a, filename = "f3a_results.png","jpg", "/cloud/project/plots/committee")
+
+voi_plot_3b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_bet_win", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Beta Win") + facet_wrap("cond")
+voi_plot_3b
+
+ggsave(voi_plot_3b, filename = "f3a_results.png","jpg", "/cloud/project/plots/committee")
+
+voi_plot_4a <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_loss", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Loss") + facet_wrap("cond")
+voi_plot_4a
+
+voi_plot_4b <- ggscatter(longdat.data.voi, x = "meanact_Vstr", y = "sc_win", color = "cond",
+          add = "reg.line", conf.int = TRUE, cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Mean activation nucleus accumbens", ylab = "Scaling Loss") + facet_wrap("cond")
+voi_plot_4b
+
+
+```
+## 7) ANOVA delta learning and vmPFC (not included in manuscript): group split in better vs. worse learners under stress 
+```{r, include=FALSE,error=FALSE,warning=FALSE}
+
+res.vmPFC <- ezANOVA(longdat.data.voi, meanact_vmPFC, sub_id, within = .(cond),between = .(STlearning), detailed = TRUE, type = 3)
+
+# and make it look nicer
+anova_out(res.vmPFC)
+
+# make a boxplot to take a look at distribution of p_switch group and phasewise
+# panels show different groups
+ggplot(dat.voi, aes(x=cond, y=meanact_vmPFC)) + geom_boxplot() 
+
+# plot rmANOVA in two panels (AD and HC) with within-factors volat (pre, rev, post) and cond(ST vs. CT)
+ezPlot(
+   data = dat.voi
+   , dv = .(meanact_vmPFC)
+   , wid = .(sub_id)
+   , within = .(cond)
+   , x = .(cond)
+   , y_lab = "meanact_vmPFC"
+   , split_lab = "Condition"
+)
+```
+
+## 8) Plots for Figure 3
+```{r}
+
+se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
+
+sum.correct <- longdat.HC.correct %>% group_by(sub_id,phase,cond,volat) %>% summarise(meancorr = mean(p_correct,na.rm=TRUE),SE=se(p_correct))
+
+barplot.phase.pcorrect <- ggplot(data=sum.correct,aes(x = "volat",y = "meancorr")) + geom_bar(stat="identity", color="blue", fill="white")
+                # geom_errorbar(aes(ymin=meancorr-SE, ymax=meancorr+SE),width=.2) + 
+  labs(title = '',  x = "Trial relative to reversal", y = "Mean advantageous choices", color = "Condition") 
+
+barplot.pcorrect <- ggbarplot(longdat.data_all, y = "p_correct", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.5,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Correct responses") +
+   labs(title = 'Correct responses across task',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+            theme(
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   theme(axis.text.x = element_blank()) +
+   scale_x_discrete(breaks = NULL) +
+   scale_y_continuous(labels = percent,expand = c(0,0),limits=c(0,1.01))
+barplot.pcorrect
+
+barplot.pcorrect_pre <- ggbarplot(longdat.pre.data_all, y = "p_correct_pre", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.5,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Correct responses") +
+   labs(title = 'First stable phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+         theme(
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   theme(axis.text.x = element_blank()) +
+   theme(legend.position = "none") +
+   scale_x_discrete(breaks = NULL) +
+   scale_y_continuous(labels = percent,expand = c(0,0),limits=c(0,1.01))
+barplot.pcorrect_pre
+
+barplot.pcorrect_rev <- ggbarplot(longdat.rev.data_all, y = "p_correct_rev", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.5,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Correct responses") +
+   labs(title = 'Reversal phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+      theme(
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   theme(axis.text.x = element_blank()) +
+   theme(legend.position = "none") +
+   scale_x_discrete(breaks = NULL) +
+   scale_y_continuous(labels = percent,expand = c(0,0),limits=c(0,1.01))
+barplot.pcorrect_rev
+
+barplot.pcorrect_post <- ggbarplot(longdat.post.data_all, y = "p_correct_post", 
+          add = c("mean_se", "jitter"),
+          color = "cond", width=0.4, fill = c("#00BFC4","#F8766D"), alpha = 0.5,
+          position = position_dodge(0.8)) +
+   xlab("Condition") + ylab("Correct responses") +
+   labs(title = 'Late stable phase',  x = "", color = "Condition") +
+   scale_color_manual(labels = c("Control", "Stress"), values = c("#00BFC4","#F8766D")) +
+   theme(
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   theme(legend.position = "none") +
+   scale_x_discrete(breaks = NULL) +
+   scale_y_continuous(labels = percent,expand = c(0,0),limits=c(0,1.01))
+barplot.pcorrect_post
+
+
+longdat.phase.data_all$phase <- plyr::revalue(longdat.phase.data_all$phase, c("delta_STCT_pre" = "Pre-Reversal","delta_STCT_rev" ="Reversal","delta_STCT_post" ="Post Reversal"))
+
+longdat.correct$volat <- plyr::revalue(longdat.correct$volat, c("pre" = "Pre-Reversal","rev" ="Reversal","post" ="Post Reversal"))
+
+longdat.correct$cond <- factor(longdat.correct$cond,levels=rev(levels(longdat.correct$cond)))
+
+# barplot.pcorrect <- ggbarplot(longdat.correct, y = "p_correct", x = "cond",
+#           color = "cond", width=0.4,alpha = 1,
+#           position = position_dodge(0.8)) +
+#    xlab("Condition") + ylab("Percentage of correct responses") +
+#    labs(title = 'Correct responses in raw data',  x = "", color = "Condition") +
+#    scale_fill_brewer(palette="BuPu") 
+# barplot.pcorrect
+
+boxplot.delta <- ggplot(data_all, aes(x=group, y=delta_STCT)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
+   xlab("Group") + ylab("∆ Correct responses Stress - Control") +
+   labs(title = 'Interindividual differences',  x = "") +
+    theme(axis.text=element_text(size=12),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) +
+   theme(axis.text.x = element_blank()) +
+   scale_y_continuous(labels = percent) 
+boxplot.delta
+
+boxplot.delta.phase <- ggplot(longdat.phase.data_all, aes (x=phase,y=delta_correct,fill=phase)) + 
+  geom_boxplot(outlier.shape=NA) + #avoid plotting outliers twice
+  geom_jitter(position=position_jitter(width=.2, height=0),size = 2) +
+   xlab("Phase") + ylab("∆ Correct responses Stress - Control (in %)") +
+   labs(title = 'Interindividual learning differences by phase',  x = "") +
+   scale_fill_brewer(palette="BuPu")
+    theme(axis.text=element_text(size=12),
+        panel.grid.major = element_line(colour = "grey"),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = 'white'),
+        ) 
+boxplot.delta.phase
+
+ggsave(boxplot.delta.phase, filename = "boxplot.delta.phase.png","jpg", "/cloud/project/plots/meeting")
+
+
+f3_results <- ggarrange(ggarrange(barplot.pcorrect + rremove("ylab"), boxplot.delta, ncol = 2, labels = c("1", "2")),                                              # First row with scatter plot
+          ggarrange(barplot.pcorrect_pre + rremove("ylab"), 
+          barplot.pcorrect_rev + rremove("ylab") ,
+          barplot.pcorrect_post + rremove("ylab"), 
+          ncol = 3, labels = c("1a", "1b", "1c")), # Second row with box and dot plots
+          nrow = 2, 
+          labels = "1"                                        # Labels of the scatter plot
+          ) 
+annotate_figure(f3_results,
+                left = text_grob("Correct responses", color = "black", rot = 90)
+)
+f3_results
+
+ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manuscript")
+
+
+```

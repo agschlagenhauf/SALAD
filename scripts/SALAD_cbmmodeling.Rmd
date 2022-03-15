@@ -11,18 +11,20 @@ fig_caption: yes
 ---
 
 This script:
-- loads necessary packages
-- imports data (data_params: summary of 6 (or 8 if you count scaling+beta) free parameters exported from Matlab cbm section 6
-                dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample
-                data_physio_behav: same but only HC sample)
-- check parameter distributions and 
-- plots exploratory analyses on WM capacity mediating cortisol impact on behavioral performance (p_correct)
+1) loads necessary packages
+2) imports data (data_params: only summary of 6 (or 8 if you count scaling+beta) free parameters exported from Matlab loop_SALAD_Op_bothCond.mlx section 6, widedat.data.voi: params plus behav data; dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample, data_physio_behav: same but only HC sample)
+3) prepares dataframes
+4) checks and plots parameter distributions (Supplementary Figure S3/S4)
+5) exploratory analyses on model parameters, individual cortisol (AUCG) and behavioral performance (p_correct) (Supplementary Figure S5-S8))
+6) exploratory analyses on WM capacity and model parameters after delta split
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+## 1) Load packages
 ```{r, include=F}
 rm(list = ls()) 
 
@@ -30,8 +32,6 @@ if (!require(ggplot2)) install.packages("ggplot2")
 if (!require(lme4)) install.packages("lme4")
 if (!require(corrplot)) install.packages("corrplot")
 if (!require(PerformanceAnalytics)) install.packages("PerformanceAnalytics")
-if (!require(kableExtra)) install.packages('kableExtra')
-if (!require(Hmisc)) install.packages('Hmisc')
 if (!require(sjmisc)) install.packages('sjmisc')
 if (!require(ggpubr)) install.packages("ggpubr")
 
@@ -39,14 +39,12 @@ library("ggplot2")
 library("lme4")
 library("corrplot")
 library("PerformanceAnalytics")
-library("kableExtra")
-library("Hmisc")
 library("sjmisc")
 library("ggpubr")
 
 ```
 
-# Data Import
+## 2) Data import
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST:
 
@@ -58,14 +56,12 @@ load('/cloud/project/dataframes/data_params.rda')
 
 ```
 
-
-## Modeling Preparations and Checks
+## 3) Preps: calculate delta, checks for outliers
 ```{r}
 
 # dichotomize HC dataset by WM capacity (num_backward)
 data_physio_behav$wm_cap <- dicho(data_physio_behav$num_backward, dich.by = "median", as.num = TRUE)
 data_physio_behav$wm_cap <-factor(data_physio_behav$wm_cap, labels=c("low WM", "high WM"))
-
 
 data_physio_behav <- mutate(data_physio_behav, delta_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
 data_physio_behav <- mutate(data_physio_behav,m_delta_STCT_pre = mean(delta_STCT_pre))
@@ -82,33 +78,10 @@ data_physio_behav <- mutate(data_physio_behav,m_delta_STCT = mean(delta_STCT))
 data_physio_behav$STlearning <- dicho(data_physio_behav$delta_STCT, dich.by = 0, as.num = TRUE)
 data_physio_behav$STlearning <-factor(data_physio_behav$STlearning, labels=c("worse under stress", "better under stress"))
 
-chronstr_delta.ttest <- stats::t.test(PSS_Total~STlearning, var.equal = TRUE, data = data_physio_behav)
-WM_delta.ttest <- stats::t.test(num_backward~STlearning, var.equal = TRUE, data = data_physio_behav)
-
-sum_chronstr <- data_physio_behav %>% group_by(STlearning) %>% summarise(MeanPSSTotal=mean(PSS_Total,na.rm=T), sd=sd(PSS_Total,na.rm=T))
-sum_numbackward <- data_physio_behav %>% group_by(STlearning) %>% summarise(num_backward=mean(num_backward,na.rm=T), sd=sd(num_backward,na.rm=T))
-
-
 # dichotomize HC dataset by lifetime stress (PSS)
 data_physio_behav$lt_stress <- dicho(data_physio_behav$PSS_Total, dich.by = "median", as.num = TRUE)
 data_physio_behav$lt_stress <-factor(data_physio_behav$lt_stress, labels=c("low lifetime stress", "high lifetime stress"))
 
-# calculate the difference between individual p_correct values (ST-CT) for single phases and all
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_pre = mean(diff_STCT_pre))
-
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_rev = p_correct_rev_ST - p_correct_rev_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_rev = mean(diff_STCT_rev))
-
-data_physio_behav <- mutate(data_physio_behav, diff_STCT_post = p_correct_post_ST - p_correct_post_CT)
-data_physio_behav <- mutate(data_physio_behav,m_diff_STCT_post = mean(diff_STCT_post))
-
-data_physio_behav <- mutate(data_physio_behav, diff_STCT = p_correct_ST - p_correct_CT)
-
-median_params <- data_params %>% summarise_if(is.numeric, median)
-sd_params <- data_params %>% summarise_if(is.numeric, sd)
-
-params_sum <- rbind(median_params, sd_params)
 
 # find and exclude outliers
 data_physio_behav %>% 
@@ -126,9 +99,10 @@ data_physio_behav$zbet_win <- data_physio_behav %>%
   scale() %>% 
   # sort the z-values in ascending order to find the extremes more easily
   sort()
-# Distribution of parameters: separated because of different ranges
 
-# wide to long
+
+# Distribution of parameters: separated because of deltaerent ranges
+# reshape modeling data into long format for plots
 data_params_al <- data_params %>% select(c("al_win","al_loss"))
 data_params_bet <- data_params %>% select(c("bet_win","bet_loss","sc_bet_win","sc_bet_loss"))
 data_params_sc <- data_params %>% select(c("sc_win","sc_loss"))
@@ -147,7 +121,6 @@ data_params_al <- data_params_al %>% rename("Alpha (win)" = al_win)
 data_params_al <- data_params_al %>% rename("Alpha (loss)" = al_loss)
 
 
-
 data_params_long_bet <- data_params_bet %>% 
   gather(key = "Parameter", value = "ParameterValue", -sub_idx)
 data_params_long_bet
@@ -156,6 +129,7 @@ data_params_long_al <- data_params_al %>%
   gather(key = "Parameter", value = "ParameterValue", -sub_idx)
 data_params_long_al
 
+# prepare as covariate for SPM
 bet_cov_prep <- data_physio_behav %>% select("sub_id","bet_win","bet_loss","sc_bet_win","sc_bet_loss")
 save(file='/cloud/project/dataframes/dat.bet_cov_prep.rda',bet_cov_prep)
 bet_cov_dat <- load('/cloud/project/dataframes/dat.bet_cov_prep.rda')
@@ -164,7 +138,18 @@ write.csv(get(bet_cov_dat), file='/cloud/project/fmri/bet_cov_prep.csv')
 
 data_params_long_bet$Parameter <- factor(data_params_long_bet$Parameter)
 
+data_all_params <- data_params %>% right_join(data_physio_behav_red, by="sub_id")
 
+```
+
+## 4) Parameter distributions
+```{r, include=FALSE}
+
+# some descriptive stats
+median_params <- data_params %>% summarise_if(is.numeric, median)
+sd_params <- data_params %>% summarise_if(is.numeric, sd)
+
+params_sum <- rbind(median_params, sd_params)
 
 # make violin plots to show distribution
 p.betviol <- ggplot(data_params_long_bet, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE)  + stat_summary(fun=median, geom="point", size=3, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) + theme(axis.title=element_text(size=12), axis.text=element_text(size=12)) 
@@ -173,25 +158,50 @@ p.betviol
 p.alviol <- ggplot(data_params_long_al, aes(x = Parameter, y = ParameterValue)) + geom_violin(trim = TRUE) + stat_summary(fun=median, geom="point", size=3, color="red") + geom_jitter(shape=16, position=position_jitter(0.2)) + theme(axis.title=element_text(size=12), axis.text=element_text(size=12)) 
 p.alviol
 
-ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/manuscript_plots")
-ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(p.betviol, filename = "betviol.png","jpg", "/cloud/project/plots/manuscript")
+ggsave(p.alviol, filename = "alviol.png","jpg", "/cloud/project/plots/manuscript")
+
+##################### Ttests
+
+# ttest for scaling against 0: ns
+scwin.ttest <- stats::t.test(data_params$sc_win)
+scwin.ttest
+
+scloss.ttest <- stats::t.test(data_params$sc_loss)
+scloss.ttest
+
+# ttest for scaling plus betas against 0: significant for both but does not tell us much
+scbetwin.ttest <- stats::t.test(data_params$sc_bet_win)
+scbetwin.ttest
+
+scbetloss.ttest <- stats::t.test(data_params$sc_bet_loss)
+scbetloss.ttest
+
+# ttest for betas against 0
+betwin.ttest <- stats::t.test(data_params$bet_win)
+betwin.ttest
+
+betloss.ttest <- stats::t.test(data_params$bet_loss)
+betloss.ttest
+
+# ttest for win vs. loss for both learning rate and inverse temperature: significant
+pairedwinlossbet.ttest <- stats::t.test(data_params$bet_win,data_params$bet_loss, paired = TRUE)
+pairedwinlossbet.ttest
+
+pairedwinlossal.ttest <- stats::t.test(data_params$al_win,data_params$al_loss, paired = TRUE)
+pairedwinlossal.ttest
 
 ##################### CORRELATION MODELING params with each other
 
-res2 <- rcorr(as.matrix(data_params))
-
-res <- cor(data_params)
-
-corrplot(res2$r,method = "number", type="upper", 
-         p.mat = res2$P, sig.level = 0.05, insig = "blank")
+corrplot(cor(data_params),method = "number", type="upper", sig.level = 0.05, insig = "blank")
 
 chart.Correlation(data_params)
 
 ```
 
-```{r}
 
-##################### MODELING and BEHAV p_correct 
+## 5) Model parameters and behavioral performance/individual cortisol: mod_pcorrect_plot_7, _8, _9, _10 (Supplementary Figure S5-S8)
+```{r}
 # calculate from modeling params beta parameters + scaling factor
 
 data_physio_behav <- data_physio_behav  %>% mutate(bet_ST_loss = abs(bet_loss) + abs(sc_bet_loss))
@@ -201,25 +211,25 @@ data_physio_behav.nooutlier <- data_physio_behav %>% filter(zbet_win < 3)
 
 
 # plots for modeling params of DU_scaling_bothCond (winning model with different betas for ST vs. CT) and p_correct
-mod_pcorrect_plot_1 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "diff_STCT",
+mod_pcorrect_plot_1 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Beta Win", ylab = "Difference ST-CT")
 mod_pcorrect_plot_1
 
-mod_pcorrect_plot_2 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "diff_STCT",
+mod_pcorrect_plot_2 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Beta Loss", ylab = "Difference ST-CT") 
 mod_pcorrect_plot_2
 
-mod_pcorrect_plot_3 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_win", y = "diff_STCT",
+mod_pcorrect_plot_3 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_win", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Scaling Beta Win", ylab = "Difference ST-CT") 
 mod_pcorrect_plot_3
 
-mod_pcorrect_plot_4 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_loss", y = "diff_STCT",
+mod_pcorrect_plot_4 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_loss", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
           cor.coef = TRUE, cor.method = "pearson",
           xlab = "Scaling Beta Loss", ylab = "Difference ST-CT")
@@ -245,7 +255,7 @@ mod_pcorrect_plot_7 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y =
           xlab = "Beta CT Win", ylab = "Correct Performance CT")
 mod_pcorrect_plot_7
 
-ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "/cloud/project/plots/manuscript")
 
 mod_pcorrect_plot_8 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
@@ -253,7 +263,7 @@ mod_pcorrect_plot_8 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y 
           xlab = "Beta CT Loss", ylab = "Correct Performance CT")
 mod_pcorrect_plot_8
 
-ggsave(mod_pcorrect_plot_8, filename = "fmodpcorrect_lossCT_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(mod_pcorrect_plot_8, filename = "fmodpcorrect_lossCT_results.png","jpg", "/cloud/project/plots/manuscript")
 
 mod_pcorrect_plot_9 <- ggscatter(data_physio_behav, x = "sc_bet_win", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
@@ -261,7 +271,7 @@ mod_pcorrect_plot_9 <- ggscatter(data_physio_behav, x = "sc_bet_win", y = "p_cor
           xlab = "Scaling + Beta Win", ylab = "Correct Performance ST")
 mod_pcorrect_plot_9
 
-ggsave(mod_pcorrect_plot_9, filename = "fmodpcorrect_winST_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(mod_pcorrect_plot_9, filename = "fmodpcorrect_winST_results.png","jpg", "/cloud/project/plots/manuscript")
 
 mod_pcorrect_plot_10 <- ggscatter(data_physio_behav, x = "sc_bet_loss", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
@@ -269,7 +279,7 @@ mod_pcorrect_plot_10 <- ggscatter(data_physio_behav, x = "sc_bet_loss", y = "p_c
           xlab = "Scaling + Beta Loss", ylab = "Correct Performance ST")
 mod_pcorrect_plot_10
 
-ggsave(mod_pcorrect_plot_10, filename = "fmodpcorrect_lossST_results.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(mod_pcorrect_plot_10, filename = "fmodpcorrect_lossST_results.png","jpg", "/cloud/project/plots/manuscript")
 
 # scaling beta + beta = ST correlated with AUCG-ST
 
@@ -299,47 +309,19 @@ mod_aucg_plot_4 <- ggscatter(data_physio_behav, x = "bet_win", y = "aucg_control
           xlab = "Beta CT Win", ylab = "AUCG-Stress")
 mod_aucg_plot_4
 
-
-# ttest for scaling against 0
-scwin.ttest <- stats::t.test(data_params$sc_win)
-scloss.ttest <- stats::t.test(data_params$sc_loss)
-
-# ttest for scaling plus betas against 0
-scbetwin.ttest <- stats::t.test(data_params$sc_bet_win)
-scbetloss.ttest <- stats::t.test(data_params$sc_bet_loss)
-
-# ttest for betas against 0
-betwin.ttest <- stats::t.test(data_params$bet_win)
-betloss.ttest <- stats::t.test(data_params$bet_loss)
-
-# paired ttest for betas with and w/o scaling against each other
-pairedwin.ttest <- stats::t.test(data_params$bet_win,data_params$sc_bet_win, paired = TRUE)
-pairedloss.ttest <- stats::t.test(data_params$bet_loss,data_params$sc_bet_loss, paired = TRUE)
-
-pairedwinlossbet.ttest <- stats::t.test(data_params$bet_win,data_params$bet_loss, paired = TRUE)
-pairedwinlossal.ttest <- stats::t.test(data_params$al_win,data_params$al_loss, paired = TRUE)
-
-
-
-# Cortisol difference correlated with scaling factors
-
-p.mod.cortscloss <- ggscatter(data_physio_behav, x = "aucg_diff", y = "sc_loss", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cortisol difference", ylab = "Scaling Loss")
-p.mod.cortscloss
-
-p.mod.cortscwin <- ggscatter(data_physio_behav, x = "aucg_diff", y = "sc_win", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cortisol difference", ylab = "Scaling Win")
-p.mod.cortscwin
-
 ```
 
 
-## Neuropsychology and Modeling Parameters
+## 6) Neuropsychology (WM) and modeling parameters
 ```{r}
+
+# compare better vs. worse learners under ST with regard to past stress exposure and WM 
+chronstr_delta.ttest <- stats::t.test(PSS_Total~STlearning, var.equal = TRUE, data = data_physio_behav)
+WM_delta.ttest <- stats::t.test(num_backward~STlearning, var.equal = TRUE, data = data_physio_behav)
+
+# some summary stats 
+sum_chronstr <- data_physio_behav %>% group_by(STlearning) %>% summarise(MeanPSSTotal=mean(PSS_Total,na.rm=T), sd=sd(PSS_Total,na.rm=T))
+sum_numbackward <- data_physio_behav %>% group_by(STlearning) %>% summarise(num_backward=mean(num_backward,na.rm=T), sd=sd(num_backward,na.rm=T))
 
 neuropsych_params <- select(data_physio_behav,sub_id, group, order, age, IQ_WST, school_yrs, tmt_a, tmt_b, dsst, num_forward, num_backward, IQ_WST, al_win, al_loss, bet_win, bet_loss, sc_win, sc_loss, sc_bet_win, sc_bet_loss, STlearning)
 
@@ -374,21 +356,7 @@ longdat.np_winloss_2 <- reshape(longdat.np_winloss,
 longdat.np_winloss_2$cond <- factor(longdat.np_winloss_2$cond)
 
 res.condbeta <- ezANOVA(data= longdat.np_winloss_2,dv = betas, wid = sub_id, within = .(cond),between = STlearning, detailed = TRUE, type = 3)
+anova_out(res.condbeta)
 
-corrplot(res3$r,method = "color", type="upper", 
-         p.mat = res3$P, sig.level = 0.05, insig = "blank")
-
-
-p.mod.betiq1 <- ggscatter(data_all, x = "IQ_WST", y = "bet_win", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cognitive capacities", ylab = "Inverse decision temperature (beta win)")
-p.mod.betiq1
-
-p.mod.betiq2 <- ggscatter(data_all, x = "IQ_WST", y = "bet_loss", 
-          add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Cognitive capacities", ylab = "Inverse decision temperature (beta loss)")
-p.mod.betiq2
 
 ```
