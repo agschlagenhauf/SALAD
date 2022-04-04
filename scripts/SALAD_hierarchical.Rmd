@@ -11,16 +11,21 @@ fig_caption: yes
 ---
 
 This script:
-- loads necessary packages
-- imports data (data_new for full  sample, data_new_HC for only HC and excluding 1B057 who has an AUC Stress missing value)
-- sets up contrasts for phase and condition
-- sets up lmes for pcorrect, winstay, loseswitch, RT for HC and AD separately and together (only for HC sample final)
-- conducts post-hoc tests on some of the winning models using emmip
+1) loads necessary packages
+2) imports data (data_new for full  sample, data_new_HC for only HC and excluding 1B057 who has an AUC Stress missing value)
+3) sets up contrasts for phase and condition
+4) sets up lmes for pcorrect, winstay, loseswitch, RT:
+(a) for HC p_correct
+(b) with plots
+(c) for HC p_wstay, p_lswitch and RT
+(d) both samples together (+ AUD)
+5) conducts post-hoc tests on some of the winning models on p_correct in HC 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### 1) Load packages
 ```{r, include=F}
 rm(list = ls()) 
 
@@ -60,14 +65,14 @@ library("lmerTest")
 
 ```
 
-# Data Import
+## 2) Data import
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST:
 load('/cloud/project/dataframes/data_new_HC.rda')
 load('/cloud/project/dataframes/data_prep.rda')
 ```
 
-## Single Trial Analyses: Set Contrasts and Compare Models (only HC)
+## 3) Single trial analyses: Set contrasts
 ```{r}
 # extract trials with RT = 0, because they are missings/NAN
 which(!data_new_HC$RT == 0)
@@ -98,9 +103,15 @@ contrasts(data_new_HC$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3)
 # estim. value for F1 = Intercept - 0.5* Slope(F1) 1.13 = 1.19 - 0.5*0.12
 # estim. value for F2 = Intercept + 0.5* Slope(F1) 1.25 = 1.19 + 0.5*0.12
 
-###################################################################################################################
-############################ building models consecutively  #######################################################
+# # now both together
+# contrasts(data_new$Group) <- c(0.5,-0.5)
+# contrasts(data_new$Cond) <- c(0.5,-0.5)
+# contrasts(data_new$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
 
+```
+
+## 4) (a) Single trial analyses: Model comparison for p_correct with both condition and individual cortisol level
+```{r, include=FALSE}
 # CHANGE HERE scale zpeak_cort or zpeak_amyl or aucg variable to avoid convergence issues
 
 data_new_HC$aucg_scaled <- scale(data_new_HC$aucg)
@@ -152,8 +163,12 @@ anova(mod0.HC.both.correct, mod0a.HC.both.correct,mod1.HC.both.correct,mod2.HC.b
 
 # model comparison of models predicting Correct
 # here comparison only possible if everyone has a cortisol value (otherwise models do not rely on same sample)
-# 1B057 is lacking T1_cort_ST and T1_amyl_ST (for this person extra calculation of AUC? T2 instead of T1, systematic bias? otherwise exclude) - Florian
+# 1B057 is lacking T1_cort_ST and T1_amyl_ST (for this person extra calculation of AUC? T2 instead of T1, systematic bias? otherwise exclude) - Florian; decided on leaving in and imputation
 
+```
+
+## 4) (c) Single trial analyses: Plots for p_correct with both condition and individual cortisol level
+```{r}
 # now display results in a manuscript-ready format
 
 sjPlot::plot_model(mod1.HC.correct,show.values=TRUE, show.p=TRUE, axis.labels = c("Stable Phase","Reversal Phase","Cortisol Effect"))
@@ -241,6 +256,10 @@ effects_Cond <- effects::effect(term= "Cond", mod= mod1.HC.cond.correct)
 summary(effects_Cond) #output of what the values are
 x_cond <- as.data.frame(effects_Cond)
 
+```
+
+## 4) (c) Single trial analyses: Plots for p_winstay, p_lswitch, RT with both condition and individual cortisol level
+```{r, include=FALSE}
 
 
 # use single trial dataset (data_new_HC) to predict w_stay
@@ -345,72 +364,7 @@ sjPlot::plot_model(mod2.HC.RT,show.values=TRUE, show.p=TRUE, axis.labels = c("Co
 
 ``` 
 
-```{r}
-
-# filter single trial dataset by healthy controls
-data_new_AUD <- data_new %>% filter(Group == "AUD")
-
-contrasts(data_new_AUD$Group) <- c(0.5,-0.5)
-contrasts(data_new_AUD$Cond) <- c(0.5,-0.5)
-contrasts(data_new_AUD$volat) <- cbind(c1 = c(1/3,-2/3,1/3), c2 = c(1/3,1/3,-2/3))
-
-# hypr object containing 2 null hypotheses, volat1 vs. volat2 and volat1 vs. volat3 while contrasts still add to 0:
-# H0.1: 0 = X1 - X2
-# H0.2: 0 = X1 - X3
-
-###################################################################################################################
-############################ building models consecutively  #######################################################
-
-# use single trial dataset (data_new_AUD) to predict Correct
-
-# - in a model with Correct predicted by random subject intercept (0) + covariates (0a)
-# - in a model with Correct predicted by random subject intercept + all main effects (1)
-# - in a model with Correct predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
-mod0.AUD.correct <- glmer(Correct~(1|sub_idx), data=data_new_AUD, family=binomial)
-mod0a.AUD.correct <- glmer(Correct~(1|sub_idx)+age, data=data_new_AUD,family=binomial)
-mod1.AUD.correct <- glmer(Correct~Cond+volat+order+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-mod2.AUD.correct <- glmer(Correct~Cond*volat*order+(1|sub_idx), data=data_new_AUD,family=binomial)
-upd1.AUD.correct <- getME(mod2.AUD.correct,c("theta","fixef"))
-mod2.AUD.correct.upd <- update(mod2.AUD.correct,start=upd1.AUD.correct,control=glmerControl(optCtrl=list(maxfun=2e4)))
-
-# model comparison of models predicting Correct
-anova(mod0.AUD.correct, mod0a.AUD.correct, mod1.AUD.correct,mod2.AUD.correct)
-
-# use single trial dataset (data_new_AUD) to predict w_stay
-
-# - in a model with w_stay predicted by random subject intercept (0) + covariates (0a)
-# - in a model with w_stay predicted by random subject intercept + all main effects (1)
-# - in a model with w_stay predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
-mod0.AUD.wstay <- glmer(w_stay~(1|sub_idx), data=data_new_AUD, family=binomial)
-mod0a.AUD.wstay <- glmer(w_stay~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-mod1.AUD.wstay <- glmer(w_stay~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-mod2.AUD.wstay <- glmer(w_stay~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-upd2.AUD.wstay <- getME(mod2.AUD.wstay,c("theta","fixef"))
-mod2.AUD.wstay.upd <- update(mod2.AUD.wstay,start=upd2.AUD.wstay,control=glmerControl(optimizer="Nelder_Mead",optCtrl=list(maxfun=2e4)))
-
-# model comparison of w_stay models
-anova(mod0.AUD.wstay,mod0a.AUD.wstay,mod1.AUD.wstay,mod2.AUD.wstay)
-
-# use single trial dataset (data_new_AUD) to predict l_switch
-
-# - in a model with l_switch predicted by random subject intercept (0) + covariates (0a)
-# - in a model with l_switch predicted by random subject intercept + all main effects (1)
-# - in a model with l_switch predicted by random subject intercept + all main effects + 2-way-interaction effect (2)
-
-mod0.AUD.lswitch <- glmer(l_switch~(1|sub_idx), data=data_new_AUD, family=binomial)
-mod0a.AUD.lswitch <- glmer(l_switch~(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-mod1.AUD.lswitch <- glmer(l_switch~Cond+volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-mod2.AUD.lswitch <- glmer(l_switch~Cond*volat+(1|sub_idx)+school_yrs+age, data=data_new_AUD,family=binomial)
-upd2.AUD.lswitch <- getME(mod2.AUD.lswitch,c("theta","fixef"))
-mod2.AUD.lswitch.upd <- update(mod2.AUD.lswitch,start=upd2.AUD.lswitch,control=glmerControl(optCtrl=list(maxfun=2e4)))
-
-# model comparison of lswitch models
-anova(mod0.AUD.lswitch,mod0a.AUD.lswitch,mod1.AUD.lswitch,mod2.AUD.lswitch)
-
-
-``` 
-
-## Single Trial Analyses: Set Contrasts and Compare Models (AUD + HC)
+## 4) (d) Single trial analyses: HC+AUD for p_correct, p_winstay, p_lswitch
 ```{r}
 contrasts(data_new$Group) <- c(0.5,-0.5)
 contrasts(data_new$Cond) <- c(0.5,-0.5)
@@ -518,7 +472,7 @@ anova(mod0.lswitch,mod0a.lswitch,mod1.lswitch,mod2.lswitch.upd,mod3.lswitch.upd)
 
 ``` 
 
-## Post Hoc Tests
+## Post hoc tests for HC and p_correct
 ```{r}
 # do post-hoc tests on simple models mod1a
 

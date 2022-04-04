@@ -74,7 +74,7 @@ data_physio_behav_red <- tibble::rowid_to_column(data_physio_behav_red, "sub_idx
 
 # UNCOMMENT THE FOLLOWING FOR NOT REMOVING 28-1B_057 (missing aucg_stress value), 17-1B015, 25-1B052, 28-1B056 (cortisol-nonresponder)
 # data_physio_behav_red <- data_physio_behav_red[-c(17,25,27,28),]
-data_physio_behav_red <- data_physio_behav_red[-c(28),]
+#data_physio_behav_red <- data_physio_behav_red[-c(28),]
 
 ################# PREPARE BEHAV DATASETS AND MERGE WITH PHYSIO + SINGLETRIALS (both HC and AD)
 

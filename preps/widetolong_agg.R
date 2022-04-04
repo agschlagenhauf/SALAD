@@ -5,6 +5,7 @@ library(strex)
 ################# ALL DATA FOR BEHAVIORAL/AGGREGATED ANALYSES PREPARED HERE ###########
 ################# Transfer wide to long for p_correct #################
 
+source("/cloud/project/preps/prep_agg.R")
 
 ## transfer from wide to long format p_correct, reclassify variables, prepare for stats
 # transfer them to long format as preparation for rmANOVA
@@ -85,7 +86,7 @@ longdat.correct$cond <- as.factor(longdat.correct$cond)
 levels(longdat.correct$cond) <- c('Stress', 'Control')
 
 longdat.HC.correct <- longdat.correct %>% filter(longdat.correct$group == 'HC')
-longdat.AD.correct <- longdat.correct %>% filter(longdat.correct$group == 'AD')
+#longdat.AD.correct <- longdat.correct %>% filter(longdat.correct$group == 'AD')
 
 ################# Transfer wide to long for p_winstay #################
 
@@ -133,7 +134,7 @@ longdat.winstay$cond <- as.factor(longdat.winstay$cond)
 levels(longdat.winstay$cond) <- c('Stress', 'Control')
 
 longdat.HC.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'HC')
-longdat.AD.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'AD')
+#longdat.AD.winstay <- longdat.winstay %>% filter(longdat.winstay$group == 'AD')
 
 
 ################# Transfer wide to long for p_lswitch #################
@@ -183,7 +184,7 @@ longdat.lswitch$cond <- as.factor(longdat.lswitch$cond)
 levels(longdat.lswitch$cond) <- c('Stress', 'Control')
 
 longdat.HC.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'HC')
-longdat.AD.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'AD')
+#longdat.AD.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'AD')
 
 
 longdat.RT <- melt(dat_all,
@@ -232,7 +233,7 @@ longdat.RT$cond <- as.factor(longdat.RT$cond)
 levels(longdat.RT$cond) <- c('Stress', 'Control')
 
 longdat.HC.RT <- longdat.RT %>% filter(longdat.RT$group == 'HC')
-longdat.AD.RT <- longdat.RT %>% filter(longdat.RT$group == 'AD')
+#longdat.AD.RT <- longdat.RT %>% filter(longdat.RT$group == 'AD')
 
 ## transfer from wide to long format p_stay, reclassify variables, prepare for stats
 # transfer them to long format as preparation for rmANOVA
@@ -354,41 +355,44 @@ longdat.winswitch$cond <- as.factor(longdat.winswitch$cond)
 levels(longdat.winswitch$cond) <- c('Stress', 'Control')
 
 longdat.HC.winswitch <- longdat.winswitch %>% filter(longdat.winswitch$group == 'HC')
-longdat.AD.winswitch <- longdat.winswitch %>% filter(longdat.winswitch$group == 'AD')
+#longdat.AD.winswitch <- longdat.winswitch %>% filter(longdat.winswitch$group == 'AD')
 
 ################# Transfer wide to long along cond for p_lswitch #################
 
 ## transfer from wide to long format p_lswitch, reclassify variables, prepare for stats
 # transfer them to long format as preparation for rmANOVA
+# 
+# longdat.lswitch <- melt(dat_all,
+#                           # ID variables - all the variables to keep but not split apart on
+#                           id.vars=c("sub_id", "group","order","age","IQ_WST","school_yrs"),
+#                           # The source columns
+#                           measure.vars=c("p_lose_switch_ST","p_lose_switch_CT"),
+#                           # Name of the destination column that will identify the original
+#                           # column that the measurement came from
+#                           variable.name="cond",
+#                           value.name="p_lswitch"
+# )
+# 
+# # use package strex to extract last number from sub_id and turn it into factor
+# longdat.lswitch$id <- str_last_number(longdat.lswitch$sub_id)
+# longdat.lswitch$id <- as.factor(longdat.lswitch$id)
+# longdat.lswitch$p_lswitch <- as.numeric(longdat.lswitch$p_lswitch)
+# longdat.lswitch$cond <- as.numeric(longdat.lswitch$cond)
+# 
+# 
+# longdat.lswitch <- longdat.lswitch %>% arrange(id)
+# 
+# longdat.lswitch <- longdat.lswitch %>% mutate(cond2 = longdat.lswitch$cond*1) %>% rename(cond = longdat.lswitch$cond2)
+# 
+# longdat.lswitch$group <- as.factor(longdat.lswitch$group)
+# levels(longdat.lswitch$group) <- c('HC', 'AD')
+# 
+# longdat.lswitch$cond <- as.factor(longdat.lswitch$cond)
+# levels(longdat.lswitch$cond) <- c('Stress', 'Control')
+# 
+# longdat.HC.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'HC')
+# #longdat.AD.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'AD')
 
-longdat.lswitch <- melt(dat_all,
-                          # ID variables - all the variables to keep but not split apart on
-                          id.vars=c("sub_id", "group","order","age","IQ_WST","school_yrs"),
-                          # The source columns
-                          measure.vars=c("p_lose_switch_ST","p_lose_switch_CT"),
-                          # Name of the destination column that will identify the original
-                          # column that the measurement came from
-                          variable.name="cond",
-                          value.name="p_lswitch"
-)
-
-# use package strex to extract last number from sub_id and turn it into factor
-longdat.lswitch$id <- str_last_number(longdat.lswitch$sub_id)
-longdat.lswitch$id <- as.factor(longdat.lswitch$id)
-longdat.lswitch$p_lswitch <- as.numeric(longdat.lswitch$p_lswitch)
-longdat.lswitch$cond <- as.numeric(longdat.lswitch$cond)
-
-
-longdat.lswitch <- longdat.lswitch %>% arrange(id)
-
-longdat.lswitch <- longdat.lswitch %>% mutate(cond2 = longdat.lswitch$cond*1) %>% rename(cond = longdat.lswitch$cond2)
-
-longdat.lswitch$group <- as.factor(longdat.lswitch$group)
-levels(longdat.lswitch$group) <- c('HC', 'AD')
-
-longdat.lswitch$cond <- as.factor(longdat.lswitch$cond)
-levels(longdat.lswitch$cond) <- c('Stress', 'Control')
-
-longdat.HC.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'HC')
-longdat.AD.lswitch <- longdat.lswitch %>% filter(longdat.lswitch$group == 'AD')
+save(file='/cloud/project/dataframes/longdat.HC.correct.rda',longdat.HC.correct)
+save(file='/cloud/project/dataframes/longdat.correct.rda',longdat.correct)
 

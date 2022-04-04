@@ -4,7 +4,7 @@ library(reshape2)
 library(dplyr)
 library(foreign)
 
-################# ALL DATA FOR BEHAVIORAL/AGGREGATED ANALYSES IMPORTED HERE ###########
+################# ALL DATA FOR BEHAV/AGGREGATED/fMRI ANALYSES IMPORTED HERE ###########
 
 # adapt path to data you want to import: operant_sample1 uses our extraction method, operant sample1_diff uses Zsuzsi's, operant_sample1_modeling includes modeling parameter
 extrac_file <- "data_sum/operant_sample1.csv"
@@ -39,13 +39,12 @@ dat.vas.raw <- read.spss(spss_file, use.value.label=TRUE, to.data.frame=TRUE)
 
 dat.vas <- dat.vas.raw %>% select(VpNr,vas1_t1_ctrl,vas2_t1_ctrl,vas3_t1_ctrl, vas1_t2_ctrl,vas2_t2_ctrl,vas3_t2_ctrl,vas1_t3_ctrl,vas2_t3_ctrl,vas3_t3_ctrl, vas1_t4_ctrl,vas2_t4_ctrl,vas3_t4_ctrl, vas1_t5_ctrl,vas2_t5_ctrl,vas3_t5_ctrl, vas1_t6_ctrl,vas2_t6_ctrl,vas3_t6_ctrl, vas1_t1_str,vas2_t1_str,vas3_t1_str, vas1_t2_str,vas2_t2_str,vas3_t2_str,vas1_t3_str,vas2_t3_str,vas3_t3_str, vas1_t4_str,vas2_t4_str,vas3_t4_str, vas1_t5_str,vas2_t5_str,vas3_t5_str, vas1_t6_str,vas2_t6_str,vas3_t6_str)
 
-
 # create datasets with only complete subjects or removed outliers (according to < 55% p_correct in all trials)
 # dat_physio <- dat_physio %>% subset(dat_physio$operant_inclusion=="1")
 # dat_complete <- na.omit(dat)
 # 
-# dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
-# dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
+dat.outlier.T1 <- dat %>% filter(p_correct_T1 < .55)
+dat.outlier.T2 <- dat %>% filter(p_correct_T2 < .55)
 
 dat.nooutlier <- dat %>% filter(p_correct_T1 > .55) %>% filter(p_correct_T2 > .55)
 

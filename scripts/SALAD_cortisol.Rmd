@@ -10,22 +10,20 @@ output:
 fig_caption: yes
 ---
 
-This script:
-- loads necessary packages
-- imports data (
-data_physio_clean: physio dataset of both AD and HC - larger sample than behav: 136 in wide format, 
-                data_physio_long: both cortisol and amylase marker (2*6) for every subject in long format
-                dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample
-                data_physio_behav: same but only HC sample)
-- runs and plots basic sanity checks of stress induction and distribution of cortisol/amylase data
-- plots interindividual differences in cortisol response and behavioral performance (p_correct)
-- plots exploratory analyses on WM capacity mediating cortisol impact on behavioral performance (p_correct)
-
+This script (is partially included in the manuscript: for Figure 2 see 5)):
+1) loads necessary packages
+2) imports data (data_physio_clean: physio dataset of both AD and HC - larger sample than behav: 136 in wide format, data_physio_long: both cortisol and amylase marker (2*6) for every subject in long format, dat_physio_behav: most of behavioral data + physio data in wide format for AD + HC sample, data_physio_behav: same but only HC sample)
+3) runs and plots basic sanity checks of stress induction and distribution of cortisol/amylase data
+4) runs t-tests on single time points of cortisol
+5) plots cortisol and subjective stress data (Figure 2)
+6) plots interindividual differences in cortisol response and behavioral performance (p_correct)
+7) plots exploratory analyses on WM capacity mediating cortisol impact on behavioral performance (p_correct)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# 1) Packages
 ```{r, include=F}
 rm(list = ls()) 
 
@@ -41,11 +39,9 @@ library("ggpubr")
 library("patchwork")
 library("cowplot")
 
-
-
 ```
 
-# Data Import
+# 1) Data Import
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST:
 
@@ -62,8 +58,7 @@ load('/cloud/project/dataframes/data_all.rda')
 
 ```
 
-
-## Sanity check 1: Check distribution of cortisol and amylase
+## 3) (a) Sanity check 1: Check distribution of cortisol and amylase
 ```{r, echo=FALSE, include = F}
 
 # create basic histograms to check distribution of cortisol
@@ -91,7 +86,27 @@ hist(data_physio_clean$t6_amyl)
 hist(data_physio_clean$peak_amyl)
 ```
 
-## Physiological stress response (according to Luettgau, 2013): for cortisol and amylase
+## 3) (b) Sanity check 2: Check cortisol-responder
+```{r, echo=FALSE}
+# Lennart's paper: Of the 34 participants, 6 (18%) showed a cortisol response of < 1.5 nmol/l (Miller et al., 2013) and were therefore considered non-responders. 
+# Should we do this as well (and if so with T4-T2, there is no info on the time points in Lennart's paper) or no need with our analysis approach of AUC?
+# in our study: that would be 4 participants but how to go on then? Lennart did all behavioral analyses separately with responders but had a larger sample to start with
+
+# p_correct single trial analysis without those 4 non-responders - change?
+# post both results (w/wo non-responder) in chat with Claudia: no difference
+
+# decided to mention that in the supplement
+
+dat_physio_behav <- dat_physio_behav %>% rowwise %>% mutate(cort_min = min(t1_cort_stress,t2_cort_stress,na.rm=TRUE),cort_max = max(t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,na.rm=TRUE))
+
+
+dat_physio_behav <- dat_physio_behav %>%  mutate(cort_response_stress=cort_max-cort_min)
+
+cort.nonresponder <- dat_physio_behav %>% filter(cort_response_stress < 1.5)
+
+```
+
+## 4) Physiological stress response (according to Luettgau, 2013): for cortisol and amylase
 ```{r setup, include=FALSE}
 
 ## merge data_all with data_physio_wide.HC to get final sample 1
@@ -111,43 +126,11 @@ time_means <- data_physio_long.HC %>%
     group_by(variable_name,time,condition) %>%
     summarise(Mean = mean(value, na.rm = TRUE),SE = se(value)) %>% data.frame()
 
+```
 
-# TSST effect
-
-cort_plot <- 
-  ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
-  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
-  scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
-  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (+45)"), limits=c(0.5, 7)) +
-  scale_y_continuous(limits=c(0,11)) +
-  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="violet", alpha = .2) +
-  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
-   xlab("Time Point") + ylab("Cortisol activity in saliva in U/ml") +
-   labs(title = 'Cortisol stress response',
-        col = "Condition") + 
-   theme(plot.title = element_text(face = "italic",size=12)) +
-   theme(legend.position = "none")
-cort_plot
-
-ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
-
-# amyl_plot <- 
-#   ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
-#   geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
-#   scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
-#   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
-#   scale_y_continuous(limits=c(100,350)) +
-#   annotate("rect", xmin = 2.2, xmax = 3, ymin = 100, ymax = 350, fill="turquoise", alpha = .2) +
-#   annotate("rect", xmin = 4, xmax = 5, ymin = 100, ymax = 350, fill="darkgrey", alpha = .2) +
-#    xlab("Time Point") + ylab("Amylase activity in saliva in U/ml") +
-#    labs(title = 'Alpha-amylase stress response over the course of experimental session',
-#         subtitle = 'Clear effect of stress condition',
-#         col = "Condition") + 
-#    theme(plot.title = element_text(face = "italic"))
-#    theme_classic()
-# amyl_plot
-# 
-# ggsave(amyl_plot, filename = "amyl_plot.png","jpg", "/cloud/project/plots/committee_plots")
+# 5) T-Tests
+```{r, include=FALSE}
+## NECESSARY TO RUN THIS FIRST:
 
 # paired ttest for AUC ST vs. CT: significant difference
 auc.cort.ttest <- stats::t.test(data_physio_wide_all$indivaucg_control, data_physio_wide_all$indivaucg_stress, paired = TRUE)
@@ -243,8 +226,45 @@ indiv.T6vas.ttest
 
 ```
 
-## Subjective stress response (according to Luettgau, 2013)
+## 6) Subjective stress response (according to Luettgau, 2013) and Figure 2
 ```{r setup, include=FALSE}
+
+# TSST effect
+
+cort_plot <- 
+  ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+  geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+  scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
+  scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (+45)"), limits=c(0.5, 7)) +
+  scale_y_continuous(limits=c(0,11)) +
+  annotate("rect", xmin = 2.2, xmax = 3, ymin = 0, ymax = 11, fill="violet", alpha = .2) +
+  annotate("rect", xmin = 4, xmax = 5, ymin = 0, ymax = 11, fill="darkgrey", alpha = .2) +
+   xlab("Time Point") + ylab("Cortisol activity in saliva in U/ml") +
+   labs(title = 'Cortisol stress response',
+        col = "Condition") + 
+   theme(plot.title = element_text(face = "italic",size=12)) +
+   theme(legend.position = "none")
+cort_plot
+
+ggsave(cort_plot, filename = "cort_plot.png","jpg", "/cloud/project/plots/manuscript")
+
+# amyl_plot <- 
+#   ggplot(time_means, aes(x=time,y=Mean, color = condition)) + geom_point() + geom_line() +      
+#   geom_errorbar(aes(ymin=Mean-SE, ymax=Mean+SE),width=.2) +
+#   scale_color_manual(values = c("#00BFC4", "#F8766D"), labels=c("Control","Stress")) +
+#   scale_x_continuous(breaks=c(1,2,3,4,5,6), labels=c("T1 (-30)", "T2 (-2)", "T3 (+10)","T4 (+15)","T5 (+30)","T6 (45)"), limits=c(0.5, 7)) +
+#   scale_y_continuous(limits=c(100,350)) +
+#   annotate("rect", xmin = 2.2, xmax = 3, ymin = 100, ymax = 350, fill="turquoise", alpha = .2) +
+#   annotate("rect", xmin = 4, xmax = 5, ymin = 100, ymax = 350, fill="darkgrey", alpha = .2) +
+#    xlab("Time Point") + ylab("Amylase activity in saliva in U/ml") +
+#    labs(title = 'Alpha-amylase stress response over the course of experimental session',
+#         subtitle = 'Clear effect of stress condition',
+#         col = "Condition") + 
+#    theme(plot.title = element_text(face = "italic"))
+#    theme_classic()
+# amyl_plot
+# 
+# ggsave(amyl_plot, filename = "amyl_plot.png","jpg", "/cloud/project/plots/committee")
 
 # same plot for all three VAS scales
 
@@ -278,7 +298,7 @@ vas1_plot <-
    theme(legend.position = "none")
 vas1_plot
 
-ggsave(vas1_plot, filename = "vas1_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(vas1_plot, filename = "vas1_plot.png","jpg", "/cloud/project/plots/manuscript")
 
 # for valence
 vas2_plot <- 
@@ -299,7 +319,7 @@ vas2_plot <-
    theme(legend.position = "none")
 vas2_plot
 
-ggsave(vas2_plot, filename = "vas2_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(vas2_plot, filename = "vas2_plot.png","jpg", "/cloud/project/plots/manuscript")
 
 # for stress
 vas3_plot <- 
@@ -320,7 +340,7 @@ vas3_plot <-
    theme(legend.position = "none")
 vas3_plot
 
-ggsave(vas3_plot, width = 3, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript_plots")
+ggsave(vas3_plot, width = 3, filename = "vas3_plot.png","jpg", "/cloud/project/plots/manuscript")
 
 
 theme_set(theme_minimal())
@@ -330,7 +350,7 @@ f2_results <- ggarrange(cort_plot,vas1_plot, vas2_plot, vas3_plot,
                     ncol = 2, nrow = 2)
 f2_results
 
-ggsave(f2_results, filename = "f2_results.png","jpg",width = 15, height = 10, "/cloud/project/plots/manuscript_plots")
+ggsave(f2_results, filename = "f2_results.png","jpg",width = 15, height = 10, "/cloud/project/plots/manuscript")
 
 #f2_results <- plot_grid(vas1_plot, vas2_plot, vas3_plot,cort_plot, ncol=2,nrow=2, labels = "AUTO", label_size = 12)
 
@@ -344,30 +364,8 @@ vas3.ttest <- stats::t.test(data_behav_vas$aucgvas3ct, data_behav_vas$aucgvas3st
 ```
 
 
-## Sanity check 2: Check cortisol-responder
-```{r, echo=FALSE}
-# Lennart's paper: Of the 34 participants, 6 (18%) showed a cortisol response of < 1.5 nmol/l (Miller et al., 2013) and were therefore considered non-responders. 
-# Should we do this as well (and if so with T4-T2, there is no info on the time points in Lennart's paper) or no need with our analysis approach of AUC?
-# in our study: that would be 4 participants but how to go on then? Lennart did all behavioral analyses separately with responders but had a larger sample to start with
-
-# p_correct single trial analysis without those 4 non-responders - change?
-# post both results (w/wo non-responder) in chat with Claudia: no difference
-
-# decided to mention that in the supplement
-
-dat_physio_behav <- dat_physio_behav %>% rowwise %>% mutate(cort_min = min(t1_cort_stress,t2_cort_stress,na.rm=TRUE),cort_max = max(t3_cort_stress,t4_cort_stress,t5_cort_stress,t6_cort_stress,na.rm=TRUE))
-
-
-dat_physio_behav <- dat_physio_behav %>%  mutate(cort_response_stress=cort_max-cort_min)
-
-cort.nonresponder <- dat_physio_behav %>% filter(cort_response_stress < 1.5)
-
-```
-
-
-## Cortisol+Behav Analyses Plots
+## 7) Cortisol and behavioral (p_correct) plots
 ```{r}
-
 # calculate the difference between individual p_correct values (ST-CT) for single phases and all
 data_physio_wide_all <- mutate(data_physio_wide_all, diff_STCT_pre = p_correct_pre_ST - p_correct_pre_CT)
 data_physio_wide_all <- mutate(data_physio_wide_all,m_diff_STCT_pre = mean(diff_STCT_pre))
@@ -431,7 +429,7 @@ physio_plot4
 ```
 
 
-## Exploratory Analyses: WM-Median Split - Cortisol - Performance (inspired by Otto,2013)
+## 8) Exploratory Analyses: WM-Median Split - Cortisol - Performance (inspired by Otto,2013)
 ```{r}
 
 require("reshape2")
