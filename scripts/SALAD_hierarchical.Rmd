@@ -137,6 +137,7 @@ anova(mod0.HC.correct, mod1.HC.correct,mod2.HC.correct,mod3.HC.correct, mod4.HC.
 # mod2.HC.correct <- glmer(Correct~zpeak_scaled*volat+(1|sub_idx), data=data_new_HC,family=binomial)
 
 mod0.HC.cond.correct <- glmer(Correct~(1|sub_idx), data=data_new_HC, family=binomial)
+mod1a.HC.cond.correct <- glmer(Correct~(1|sub_idx)+Cond+volat+val, data=data_new_HC,family=binomial)
 mod1.HC.cond.correct <- glmer(Correct~(1|sub_idx)+Cond+volat, data=data_new_HC,family=binomial)
 mod2.HC.cond.correct <- glmer(Correct~(1|sub_idx)+Cond*volat, data=data_new_HC,family=binomial)
 mod3.HC.cond.correct <-glmer(Correct~(1|sub_idx)+(Cond|sub_idx)+Cond+volat, data=data_new_HC,family=binomial)

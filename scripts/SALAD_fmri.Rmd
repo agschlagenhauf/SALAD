@@ -71,9 +71,10 @@ library("cowplot")
 # 2) Data Import
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FIRST: 
-load('/cloud/project/dataframes/dat.voi.rda')
 load('/cloud/project/dataframes/data_all.rda')
+load('/cloud/project/dataframes/dat.voi.rda')
 load('/cloud/project/dataframes/dat.ins.rda')
+load('/cloud/project/dataframes/dat.win.rda')
 load('/cloud/project/dataframes/longdat.HC.correct.rda')
 load('/cloud/project/dataframes/longdat.correct.rda')
 
@@ -547,5 +548,36 @@ f3_results
 
 ggsave(f3_results, filename = "f3_results.png","jpg", "/cloud/project/plots/manuscript")
 
+
+```
+
+## 9) Figure 6: Individual Betas in ST>CT win effect
+```{r}
+
+# Function for plotting
+plotEstimates<-function(dat.win){ggplot(dat.win,aes(x=cond,fill=cond))+ geom_boxplot(aes(lower=mean-sd,upper=mean+sd,middle=mean,ymin=mean-3*sd,ymax=mean+3*sd),stat="identity")+ theme_minimal(base_size = 20)+theme(panel.background = element_rect(fill = "transparent", colour = NA),  plot.background = element_rect(fill = "transparent", colour = NA)) +xlab("Condition")+ylab("Contrast estimate")+scale_fill_manual(values=c("#00BFC4","#F8766D"))+theme(
+    panel.background = element_rect(fill = "transparent"), # bg of the panel
+    plot.background = element_rect(fill = "transparent", color = NA), # bg of the plot
+    panel.grid.major = element_blank(), # get rid of major grid
+    panel.grid.minor = element_blank(), # get rid of minor grid
+    legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+    legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+    legend.key = element_rect(fill = "transparent", colour = NA), # get rid of key legend fill, and of the surrounding
+    axis.line = element_line(colour = "white"),# adding a white line for x and y axis
+    # axis.title.x = element_text(colour = "white"),
+    # axis.title.x = element_text(colour = "white"),
+)}
+#enter means and sd of contrast
+maineff_win <- data.frame(mean=c(-0.002396429,4.342732143),sd=c(3.442329453,4.220692753 ),cond=as.factor(c("Control","Stress")))
+
+#plot
+p<-plotEstimates(maineff_win)
+p
+
+#safe as png
+ggsave(p, filename = "maineff_win.png","png", "/cloud/project/plots/manuscript")
+
+#add label with coordinates
+#p+labs(y="Contrast Estimate\n[10, 12, -2]")
 
 ```

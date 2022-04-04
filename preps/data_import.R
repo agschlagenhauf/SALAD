@@ -18,6 +18,8 @@ spss_file <- "data_sum/SPSS/SALAD_Data.sav"
 voi_file <- "fmri/fmri_VOIvals.csv"
 ins_file <- "fmri/fmri_insvals.csv"
 
+vstr_file <- "fmri/fmri_win_maineff.csv"
+
 
 # import data, set missings (999) to NA and turn into tibble
 dat_imported <- read_csv2(extrac_file_2,na = c("999", "NA"))
@@ -30,6 +32,9 @@ dat.voi <- as_tibble(dat_voi)
 
 dat_ins <- read.csv(ins_file,header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE)
 dat.ins <- as_tibble(dat_ins)
+
+dat_win <- read.csv(vstr_file,header = TRUE, sep = ",", quote = "\"", dec = ".", fill = TRUE)
+dat.win <- as_tibble(dat_win)
 
 # import only modeling params
 data_params <-  read_csv(param_file,na = c("NA"))
@@ -56,6 +61,8 @@ save(file='/cloud/project/dataframes/dat.nooutlier.rda',dat.nooutlier)
 save(file='/cloud/project/dataframes/dat.vas.rda',dat.vas)
 save(file='/cloud/project/dataframes/dat.voi.rda',dat.voi)
 save(file='/cloud/project/dataframes/dat.ins.rda',dat.ins)
+save(file='/cloud/project/dataframes/dat.win.rda',dat.win)
+
 
 rm(dat_imported)
 rm(data_imported)
