@@ -10,7 +10,7 @@ load('/cloud/project/dataframes/longdat.cond.both.rda')
 
 se <- function(x) sd(x, na.rm=TRUE)/sqrt(length(x)-sum(is.nan(x)))
 
-# df <- filter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
+df <- filter(data_prep,Trial_idx %in% c(51:60,66:75,86:95,101:110,121:130))
 df <- data_prep
 
 # create index if first or second reversal
@@ -29,85 +29,66 @@ df$reversal[df$Trial_idx>=56 & df$Trial_idx<=70] <- 'state_2'
 df$reversal[df$Trial_idx>=91 & df$Trial_idx<=105] <- 'state_2'
 df$reversal[df$Trial_idx>=126 & df$Trial_idx<=160] <- 'state_2'
 
-state_rev <- c(1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1, 1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2, 2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2,	2)
-
-state_rev_2 <- replace(state_rev, state_rev==2, 0)
-trial_idx <- c(1:160)
-
-task_struc <- data.frame(state_rev_2)
-task_struc <- tibble::rowid_to_column(task_struc, "Trial_idx")
-# task_struc$trial_idx <- as.numeric(task_struc$trial_idx)
-# task_struc$state_rev_2 <- as.numeric(task_struc$state_rev_2)
-
 df$reversal <- factor(df$reversal)
 # index number of trials within reversal
 df$revidx <- rep(c(-5:-1,1:5),times=10*28)
 
+# create binary revstate variable
+df$revstate <- rep(c(1,2),each=5,times=10*28)
+df$revstate <- factor(df$revstate)
+
+# aggregate
+dfsens <- df %>% group_by(sub_id,revstate,Cond,reversal) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
+dfsens <- df %>% group_by(Trial_idx,Cond) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
+dfsens <- dfsens %>% arrange(desc(Cond))
 
 
-# # create binary revstate variable
-# df$revstate <- rep(c(1,2),each=5,times=10*28)
-# df$revstate <- factor(df$revstate)
-# 
-# # aggregate
-# dfsens <- df %>% group_by(sub_id,revstate,Cond,reversal) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
-# # dfsens <- df %>% group_by(Trial_idx,Cond) %>% summarise(meandiff = mean(Correct,na.rm=TRUE))
-# # dfsens <- dfsens %>% arrange(desc(Cond))
-# 
-# 
-# plot <- ggplot(task_struc, aes(x=trial_idx, y = state_rev_2)) + geom_line(aes(group=1))
-# 
-# taskstruc <- plot(state_rev_2,type = "o", col = "black", xlab = "Trial", ylab = "Outcome probability", main = "Contingencies")
-# taskstruc
-# 
-# revsensplot <- ggplot(dfsens,aes(x = Trial_idx,y = meandiff,color=Cond))+ 
-#   geom_point() + 
-#   geom_line() + 
-#   #geom_errorbar(aes(ymin=corr-SE, ymax=corr+SE),width=.2) + 
-#   labs(title = '',  x = "Trial Index", y = "Mean advantageous choices", color = "Condition") 
-# 
-# revsensplot
-# 
-# f2_results <- ggarrange(revsensplot, taskstruc,
-#                         labels = c("A", "B"),
-#                         ncol = 1, nrow = 2)
-# f2_results
-# 
-# ggsave(f2_results, filename = "f2_results.png","jpg", "/cloud/project/plots/meeting_plots")
-# 
-# 
-# # make wide along first/last variable in order to have 4 observations/subj
-# dfsenswide <- dfsens %>% spread(sub_id + reversal + Cond ~ revstate)
-# 
-# dfsenswide$sensidx <- dfsenswide$'1' - dfsenswide$'2'
-# 
-# 
-# dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
-# 
-# # dfsenswidefirst <- dfsenswide %>% filter(reversal == "First Reversal")
-# # dfsenswidesecond <- dfsenswide %>% filter(reversal == "Second Reversal")
-# # dfsenswidethird <- dfsenswide %>% filter(reversal == "Third Reversal")
-# # dfsenswidefourth <- dfsenswide %>% filter(reversal == "Fourth Reversal")
-# # dfsenswidelast <- dfsenswide %>% filter(reversal == "Last Reversal")
-# 
-# 
-# # prepare data for merge with physio
-# dfsenswideboth <- merge.data.frame(dfsenswidefirst,dfsenswidesecond, by = c("Cond","sub_id"))
-# dfsenswideboth <- dfsenswideboth %>% rename(revidx_first="sensidx.x")
-# dfsenswideboth <- dfsenswideboth %>% rename(just_cond="Cond")
-# 
-# dfsenswideboth$sub_id <- str_remove(dfsenswideboth$sub_id, "[_]")
-# longdat.cond.both <- longdat.cond.both %>% rename(Cond = just_cond)
-# 
-# 
-# dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("Cond","sub_id"))
-# 
-# df <- df %>% mutate(Choice_t = dplyr::recode(state, `-1` = 0))
-# 
-# 
-# df$df_chos1 <- NA
-# df$df_chos1<-ifelse(df$Choice_t==1,"Card A","Card B")
-# df$df_chos1 <- factor(df$df_chos1)
+revsensplot <- ggplot(dfsens,aes(x = Trial_idx,y = meandiff,color=Cond))+
+  geom_point() +
+  geom_line() +
+  #geom_errorbar(aes(ymin=corr-SE, ymax=corr+SE),width=.2) +
+  labs(title = '',  x = "Trial Index", y = "Mean advantageous choices", color = "Condition")
+
+revsensplot
+
+f2_results <- ggarrange(revsensplot, taskstruc,
+                        labels = c("A", "B"),
+                        ncol = 1, nrow = 2)
+f2_results
+
+ggsave(f2_results, filename = "f2_results.png","jpg", "/cloud/project/plots/meeting_plots")
+
+
+# make wide along first/last variable in order to have 4 observations/subj
+dfsenswide <- dfsens %>% spread(sub_id + reversal + Cond ~ revstate)
+
+dfsenswide$sensidx <- dfsenswide$'1' - dfsenswide$'2'
+
+dfsenswideagg <- dfsenswide %>% group_by(Cond,reversal) %>% summarise(mean = mean(sensidx,na.rm=TRUE),SE=se(sensidx))
+
+# dfsenswidefirst <- dfsenswide %>% filter(reversal == "First Reversal")
+# dfsenswidesecond <- dfsenswide %>% filter(reversal == "Second Reversal")
+# dfsenswidethird <- dfsenswide %>% filter(reversal == "Third Reversal")
+# dfsenswidefourth <- dfsenswide %>% filter(reversal == "Fourth Reversal")
+# dfsenswidelast <- dfsenswide %>% filter(reversal == "Last Reversal")
+
+# prepare data for merge with physio
+dfsenswideboth <- merge.data.frame(dfsenswidefirst,dfsenswidesecond, by = c("Cond","sub_id"))
+dfsenswideboth <- dfsenswideboth %>% rename(revidx_first="sensidx.x")
+dfsenswideboth <- dfsenswideboth %>% rename(just_cond="Cond")
+
+dfsenswideboth$sub_id <- str_remove(dfsenswideboth$sub_id, "[_]")
+longdat.cond.both <- longdat.cond.both %>% rename(Cond = just_cond)
+
+
+dfsenscort <- merge.data.frame(longdat.cond.both, dfsenswideboth, by = c("Cond","sub_id"))
+
+df <- df %>% mutate(Choice_t = dplyr::recode(state, `-1` = 0))
+
+
+df$df_chos1 <- NA
+df$df_chos1<-ifelse(df$Choice_t==1,"Card A","Card B")
+df$df_chos1 <- factor(df$df_chos1)
 
 # preparation for plot, calculate trialwise mean of correct choice across subject 
 dfagg_state1 <- df %>% group_by(Trial_idx,Cond)  %>% filter(reversal=="state_1")  %>%  summarise(corr=mean(Correct,na.rm=TRUE),SE=se(Correct)) 
@@ -172,7 +153,6 @@ revsensplot <- ggplot(dfagg_choice,aes(x = Trial_idx,y = Choice,color=Cond))+
   geom_line() + 
   geom_ribbon(aes(ymin=Choice-SE, ymax=Choice+SE),width=.2, alpha = 0.2) + 
   labs(title = '',  x = "Trial index", y = "Mean choice of each card", color = "Condition") 
-
 revsensplot
 
 ggsave(revsensplot, filename = "senscortplotall_choice.png","jpg", "/cloud/project/plots/manuscript_plots")

@@ -59,7 +59,7 @@ source('preps/prep_agg.R')
 # Aggregated Data Prep
 ```{r, include=FALSE}
 ## NECESSARY TO RUN THIS FOR LATER RMANOVA ANALYSES (all markdowns in analyses folder)
-source('preps/longtowide_agg.R')
+source('preps/widetolong_agg.R')
 
 ```
 

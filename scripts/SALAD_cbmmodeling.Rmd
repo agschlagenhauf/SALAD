@@ -101,7 +101,7 @@ data_physio_behav$zbet_win <- data_physio_behav %>%
   sort()
 
 
-# Distribution of parameters: separated because of deltaerent ranges
+# Distribution of parameters: separated because of ranges
 # reshape modeling data into long format for plots
 data_params_al <- data_params %>% select(c("al_win","al_loss"))
 data_params_bet <- data_params %>% select(c("bet_win","bet_loss","sc_bet_win","sc_bet_loss"))
@@ -114,8 +114,8 @@ data_params_bet <- data_params_bet %>% rename("Stress beta (win)" = sc_bet_win)
 data_params_bet <- data_params_bet %>% rename("Stress beta (loss)" = sc_bet_loss)
 
 
-data_params_bet <- data_params_bet %>% rename("Beta (win)" = bet_win)
-data_params_bet <- data_params_bet %>% rename("Beta (loss)" = bet_loss)
+data_params_bet <- data_params_bet %>% rename("Control beta (win)" = bet_win)
+data_params_bet <- data_params_bet %>% rename("Control beta (loss)" = bet_loss)
 
 data_params_al <- data_params_al %>% rename("Alpha (win)" = al_win)
 data_params_al <- data_params_al %>% rename("Alpha (loss)" = al_loss)
@@ -191,6 +191,8 @@ pairedwinlossbet.ttest
 pairedwinlossal.ttest <- stats::t.test(data_params$al_win,data_params$al_loss, paired = TRUE)
 pairedwinlossal.ttest
 
+mean(data_params$al_loss)
+
 ##################### CORRELATION MODELING params with each other
 
 corrplot(cor(data_params),method = "number", type="upper", sig.level = 0.05, insig = "blank")
@@ -213,45 +215,45 @@ data_physio_behav.nooutlier <- data_physio_behav %>% filter(zbet_win < 3)
 # plots for modeling params of DU_scaling_bothCond (winning model with different betas for ST vs. CT) and p_correct
 mod_pcorrect_plot_1 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Win", ylab = "Difference ST-CT")
+          cor.method = "pearson",
+          xlab = "Beta Win", ylab = "Difference ST-CT") + stat_cor(aes(label = ..p.label..), label.x = 3, p.accuracy = 0.001)
 mod_pcorrect_plot_1
 
 mod_pcorrect_plot_2 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Beta Loss", ylab = "Difference ST-CT") 
+          cor.method = "pearson",
+          xlab = "Beta Loss", ylab = "Difference ST-CT") + stat_cor(aes(label = ..p.label..), label.x = 3, p.accuracy = 0.001)
 mod_pcorrect_plot_2
 
 mod_pcorrect_plot_3 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_win", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Scaling Beta Win", ylab = "Difference ST-CT") 
+          cor.method = "pearson",
+          xlab = "Scaling Beta Win", ylab = "Difference ST-CT") + stat_cor(aes(label = ..p.label..), label.x = 3, p.accuracy = 0.001)
 mod_pcorrect_plot_3
 
 mod_pcorrect_plot_4 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_loss", y = "delta_STCT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
-          xlab = "Scaling Beta Loss", ylab = "Difference ST-CT")
+          cor.method = "pearson",
+          xlab = "Scaling Beta Loss", ylab = "Difference ST-CT") + stat_cor(aes(label = ..p.label..), label.x = 3, p.accuracy = 0.001)
 mod_pcorrect_plot_4
 
 # scaling beta + beta = ST correlated with p_correct ST; just beta correlated with p_correct CT
 
 mod_pcorrect_plot_5 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_win", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.method = "pearson",
           xlab = "Beta ST Win", ylab = "Correct Performance ST")
 mod_pcorrect_plot_5
 
 mod_pcorrect_plot_6 <- ggscatter(data_physio_behav.nooutlier, x = "sc_bet_loss", y = "p_correct_ST",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.method = "pearson",
           xlab = "Beta ST Loss", ylab = "Correct Performance ST")
 mod_pcorrect_plot_6
 
 mod_pcorrect_plot_7 <- ggscatter(data_physio_behav.nooutlier, x = "bet_win", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.method = "pearson",
           xlab = "Beta CT Win", ylab = "Correct Performance CT")
 mod_pcorrect_plot_7
 
@@ -259,7 +261,7 @@ ggsave(mod_pcorrect_plot_7, filename = "fmodpcorrect_winCT_results.png","jpg", "
 
 mod_pcorrect_plot_8 <- ggscatter(data_physio_behav.nooutlier, x = "bet_loss", y = "p_correct_CT",
           add = "reg.line", conf.int = TRUE, 
-          cor.coef = TRUE, cor.method = "pearson",
+          cor.method = "pearson",
           xlab = "Beta CT Loss", ylab = "Correct Performance CT")
 mod_pcorrect_plot_8
 
